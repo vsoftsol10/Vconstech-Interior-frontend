@@ -1,4 +1,5 @@
-import React from 'react'
+import { Bell, LogOut, Menu } from 'lucide-react';
+import React, { useState } from 'react'
 
 const Navbar = () => {
  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

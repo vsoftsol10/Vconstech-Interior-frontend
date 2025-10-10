@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { Lock, User, ArrowRight, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isFocused, setIsFocused] = useState({ username: false, password: false });
+  const navigate =useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    navigate("/dashboard")
     console.log('Login attempted with:', { username, password });
   };
 
@@ -119,18 +122,28 @@ const Login = () => {
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
 
+            
+
+            {/* Demo Credentials */}
+            <div className="mt-6 p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
+              <p className="text-yellow-400/80 text-xs font-semibold mb-2 uppercase tracking-wide text-center">
+                Demo Credentials
+              </p>
+              <div className="space-y-1 text-center">
+                <p className="text-yellow-500/70 text-sm">
+                  <span className="text-yellow-400">Username:</span> demo
+                </p>
+                <p className="text-yellow-500/70 text-sm">
+                  <span className="text-yellow-400">Password:</span> demo123
+                </p>
+              </div>
+            </div>
+
             {/* Forgot Password */}
-            <div className="mt-6 text-center">
+            <div className="mt-4 text-center">
               <button className="text-yellow-500/60 hover:text-yellow-400 text-sm transition-colors">
                 Forgot your password?
               </button>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-8 pt-6 border-t border-yellow-500/10">
-              <p className="text-center text-gray-500 text-xs">
-                © 2025 Interior ERP. All rights reserved.
-              </p>
             </div>
           </div>
 
