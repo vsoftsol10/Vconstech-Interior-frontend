@@ -109,7 +109,7 @@ const ourProjects = (
   return (
     <>
       {/* Sidebar */}
-      <div className="fixed top-25 md:w-64 w-16 border-r border-gray-300 min-h-screen">
+      <div className="bg-gradient-to-r from-[#ffbe2a] via-amber-300 to-[#ffbe2a] fixed top-20 md:w-64 w-16 border-r border-gray-300 min-h-screen">
         <div className="pt-4 flex flex-col">
           {sidebarLinks.map((item, index) => (
             <button
