@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import project from "../../assets/Icon/ProjectManagement.png";
+import material from "../../assets/Icon/MaterialManagement.png";
+import financial from "../../assets/Icon/FinancialManagement.png";
+import contract from "../../assets/Icon/ContractManagement.png";
+import file from "../../assets/Icon/FileManagement.png";
+import settings from "../../assets/Icon/Settings.png";
 
 const SidePannel = () => {
   const navigate = useNavigate();
@@ -14,50 +20,33 @@ const SidePannel = () => {
     </svg>
   );
 
-  const siteEngg = (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M19 8v6" />
-      <path d="M16 11h6" />
-    </svg>
+  const projectIcon = (
+  <img src={project} alt="project Management" />
+
   );
 
-  const createNewProject = (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-      stroke="currentColor" strokeWidth="2" width="24" height="24">
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v1M12 11v6m3-3H9m-6 7h18a2 2 0 002-2V9a2 2 0 00-2-2H3v12a2 2 0 002 2z" />
-    </svg>
+  const materialIcon = (
+  <img src={material} alt="project Management" />
+
   );
 
-  const notification = (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none"
-      viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M15 17h5l-1.5-1.5A2 2 0 0 1 18 14v-3a6 6 0 1 0-12 0v3a2 2 0 0 1-.5 1.5L4 17h5m0 0v1a3 3 0 0 0 6 0v-1m-6 0h6" />
-    </svg>
+  const financialIcon = (
+  <img src={financial} alt="project Management" />
+
   );
 
-  const ourEngineers = (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M12 14c3.866 0 7 1.343 7 3v2H5v-2c0-1.657 3.134-3 7-3z" />
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M15.5 3.5L17 5m-10 0l1.5-1.5M12 2v2" />
-  </svg>
+  const contractIcon = (
+  <img src={contract} alt="project Management" />
+
 );
 
-const ourProjects = (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M3 21h18M5 21V9l7-4 7 4v12M9 21V13h6v8" />
-  </svg>
+const fileIcon = (
+  <img src={file} alt="project Management" />
+
+);
+const SettingIcon = (
+  <img src={settings} alt="project Management" />
+
 );
   const logout = (
     <svg xmlns="http://www.w3.org/2000/svg" width="24"
@@ -71,11 +60,12 @@ const ourProjects = (
 
   const sidebarLinks = [
     { name: "Dashboard", path: "/contractorDashboard", icon: dashboardicon },
-    { name: "Add Site Engineer", path: "/add-site-engg", icon: siteEngg },
-    { name: "Create New Project", path: "/create-new-project", icon: createNewProject },
-    { name: "Our Engineers", path: "/our-engg", icon: ourEngineers },
-    { name: "Our Projects", path: "/our-projects", icon: ourProjects },
-    { name: "Notification", path: "/notifications", icon: notification },
+    { name: "Project Management", path: "/add-site-engg", icon: projectIcon },
+    { name: "Material Management", path: "/create-new-project", icon: materialIcon },
+    { name: "Financial Management", path: "/our-engg", icon: financialIcon },
+    { name: "Contract Management", path: "/our-projects", icon: contractIcon },
+    { name: "File Management", path: "/file-management", icon: fileIcon },
+    { name: "Settings", path: "/notifications", icon: SettingIcon },
     { name: "Logout", path: "/", icon: logout },
   ];
 
@@ -115,14 +105,17 @@ const ourProjects = (
             <button
               key={index}
               onClick={() => handleItemClick(index, item.path)}
-              className={`flex items-center py-3 px-4 gap-3 transition-colors duration-200 w-full text-left cursor-pointer
+              className={`flex items-center py-4 px-6 gap-3 transition-colors duration-200 text-left cursor-pointer
                 ${activeIndex === index
-                  ? "border-r-4 md:border-r-[6px] bg-black/10 border-black text-black font-semibold"
+                  ? "border-l-4 bg-black/10 border-black text-black font-semibold"
                   : "hover:bg-black/5 text-black"
-                }`}
+                }
+                ${item.name === "Logout" ? "mt-4" : ""}`}
             >
-              {item.icon}
-              <p className="md:block hidden">{item.name}</p>
+              <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+                {item.icon}
+              </div>
+              <p className="md:block hidden text-base">{item.name}</p>
             </button>
           ))}
         </div>
