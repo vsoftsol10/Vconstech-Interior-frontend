@@ -27,7 +27,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className=" bg-gradient-to-r from-[#ffbe2a] via-amber-300 to-[#ffbe2a] border-t-4 border-b-4 border-slate-800 shadow-md">
+      <nav className=" bg-gradient-to-r from-[#ffbe2a] via-amber-300 to-[#ffbe2a] border-t-4  border-slate-800 shadow-md">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Left side - Brand */}
@@ -44,7 +44,7 @@ const Navbar = () => {
               {/* Notification Icon */}
               <button
                 onClick={handleNotification}
-                className="p-3 text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200 relative"
+                className="p-3 text-slate-700 hover:text-slate-900 hover:bg-slate-100 hover:rounded-2xl transition-colors duration-200 relative"
                 aria-label="Notifications"
               >
                 <Bell size={22} strokeWidth={2.5} />
@@ -54,7 +54,7 @@ const Navbar = () => {
               {/* Logout Button */}
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 hover:bg-slate-800 transition-colors duration-200 font-semibold uppercase text-sm tracking-wide"
+                className="flex items-center rounded-2xl gap-2 bg-slate-900 text-white px-5 py-2.5 hover:bg-slate-800 transition-colors duration-200 font-semibold uppercase text-sm tracking-wide"
                 aria-label="Logout"
               >
                 <span className='text-white'>Logout</span>
@@ -99,7 +99,7 @@ const Navbar = () => {
                 </button>
                 <button
                   onClick={confirmLogout}
-                  className="px-6 py-2.5 bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors duration-200 uppercase text-sm tracking-wide"
+                  className="px-6 py-2.5  bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors duration-200 uppercase text-sm tracking-wide"
                 >
                   Logout
                 </button>
