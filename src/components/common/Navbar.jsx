@@ -27,7 +27,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="bg-gradient-to-r from-[#ffbe2a] via-amber-300 to-[#ffbe2a] border-t-4 border-b-4 border-slate-800 shadow-md">
+      <nav className=" bg-gradient-to-r from-[#ffbe2a] via-amber-300 to-[#ffbe2a] border-t-4 border-b-4 border-slate-800 shadow-md">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Left side - Brand */}
@@ -57,7 +57,7 @@ const Navbar = () => {
                 className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 hover:bg-slate-800 transition-colors duration-200 font-semibold uppercase text-sm tracking-wide"
                 aria-label="Logout"
               >
-                <span>Logout</span>
+                <span className='text-white'>Logout</span>
                 <LogOut size={18} />
               </button>
             </div>
