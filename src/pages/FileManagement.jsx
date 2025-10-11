@@ -6,7 +6,7 @@ const FileManagement = () => {
   const [documents, setDocuments] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
-  
+
   const [formData, setFormData] = useState({
     folderName: '',
     documentType: '',
@@ -39,8 +39,8 @@ const FileManagement = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData(prev => ({ 
-          ...prev, 
+        setFormData(prev => ({
+          ...prev,
           file: reader.result,
           fileName: file.name
         }));
@@ -83,19 +83,19 @@ const FileManagement = () => {
   };
 
   return (
- <div className="min-h-screen bg-gray-50">
-         {/* Navbar */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
       <nav className="bg-amber-400 border-b-4 border-black fixed top-0 left-0 right-0 z-50 h-16">
-        <Navbar/>
+        <Navbar />
       </nav>
 
       {/* Side Panel */}
       <aside className="bg-amber-100 border-r-4 border-black fixed left-0 top-0 bottom-0 w-16 md:w-64 z-40 overflow-y-auto">
-        <SidePannel/>
+        <SidePannel />
       </aside>
-  
+
       {/* Main Content */}
-      <div className="mt-25 w-full p-3 sm:p-4 md:p-6 lg:p-8">
+      <div className="pt-20 pl-16 md:pl-64 p-4 md:p-15 bg-gray-50 min-h-screen">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6 md:mb-8 text-center px-2 mt-6 sm:mt-10">
             <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-black mb-2">
@@ -207,8 +207,8 @@ const FileManagement = () => {
           <div className="space-y-4 px-2">
             {documents.length > 0 ? (
               documents.map(doc => (
-                <div 
-                  key={doc.id} 
+                <div
+                  key={doc.id}
                   className="bg-white border-2 border-amber-400 rounded-lg p-4 md:p-6 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-4">

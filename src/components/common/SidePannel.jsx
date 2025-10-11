@@ -12,7 +12,7 @@ const SidePannel = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [showLogoutPopup, setShowLogoutPopup] = useState(false);
+  const [showLogoutModal , setShowLogoutModal] = useState(false);
 
   // Icons
   const dashboardicon = (
@@ -81,7 +81,7 @@ const SettingIcon = (
   const handleItemClick = (index, path) => {
     if (path === "/") {
       // Show confirmation popup for logout
-      setShowLogoutPopup(true);
+      setShowLogoutModal(true);
     } else {
       setActiveIndex(index);
       navigate(path);
@@ -89,12 +89,12 @@ const SettingIcon = (
   };
 
   const confirmLogout = () => {
-    setShowLogoutPopup(false);
+    setShowLogoutModal(false);
     navigate("/"); // navigate after confirming
   };
 
   const cancelLogout = () => {
-    setShowLogoutPopup(false);
+    setShowLogoutModal(false);
   };
 
   return (
