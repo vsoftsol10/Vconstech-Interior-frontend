@@ -1,8 +1,13 @@
 import React from 'react'
+import Navbar from '../components/common/Navbar'
+import SidePannel from '../components/common/SidePannel'
 
 const FileManagement = () => {
   return (
-    <div>FileManagement</div>
+    <div>
+            <Navbar/>
+      <SidePannel/>
+      FileManagement</div>
   )
 }
 

@@ -1,8 +1,13 @@
 import React from 'react'
+import Navbar from '../components/common/Navbar'
+import SidePannel from '../components/common/SidePannel'
 
 const ContractManagement = () => {
   return (
-    <div>ContractManagement</div>
+    <div>
+            <Navbar/>
+      <SidePannel/>
+      ContractManagement</div>
   )
 }
 

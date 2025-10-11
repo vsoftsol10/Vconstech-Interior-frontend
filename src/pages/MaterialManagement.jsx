@@ -1,8 +1,13 @@
 import React from 'react'
+import Navbar from '../components/common/Navbar'
+import SidePannel from '../components/common/SidePannel'
 
 const MaterialManagement = () => {
   return (
-    <div>MaterialManagement</div>
+    <div>
+            <Navbar/>
+      <SidePannel/>
+      MaterialManagement</div>
   )
 }
 

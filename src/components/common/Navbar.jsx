@@ -27,9 +27,9 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className=" bg-gradient-to-r from-[#ffbe2a] via-amber-300 to-[#ffbe2a] border-t-4  border-slate-800 shadow-md">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+// In Navbar component
+<nav className="fixed top-0 left-0 right-0 z-50 h-24 bg-gradient-to-r from-[#ffbe2a] via-amber-300 to-[#ffbe2a] border-t-4 border-slate-800 shadow-md">        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+          <div className="flex items-center justify-between h-full">
             {/* Left side - Brand */}
             <div className="flex items-center space-x-8">
               <div className="flex-shrink-0 flex items-center gap-3">
@@ -67,7 +67,7 @@ const Navbar = () => {
 
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 relative animate-fade-in">
             <button
               onClick={cancelLogout}
