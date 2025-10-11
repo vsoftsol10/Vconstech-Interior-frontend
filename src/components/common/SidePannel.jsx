@@ -11,7 +11,7 @@ const SidePannel = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [showLogoutPopup, setShowLogoutPopup] = useState(false);
+  const [showLogoutModal , setShowLogoutModal] = useState(false);
 
   // Icons
   const dashboardicon = (
@@ -80,7 +80,7 @@ const SettingIcon = (
   const handleItemClick = (index, path) => {
     if (path === "/") {
       // Show confirmation popup for logout
-      setShowLogoutPopup(true);
+      setShowLogoutModal(true);
     } else {
       setActiveIndex(index);
       navigate(path);
@@ -88,12 +88,12 @@ const SettingIcon = (
   };
 
   const confirmLogout = () => {
-    setShowLogoutPopup(false);
+    setShowLogoutModal(false);
     navigate("/"); // navigate after confirming
   };
 
   const cancelLogout = () => {
-    setShowLogoutPopup(false);
+    setShowLogoutModal(false);
   };
 
   return (
@@ -122,24 +122,44 @@ const SettingIcon = (
       </div>
 
       {/* Logout Confirmation Modal */}
-      {showLogoutPopup && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-80 text-center">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Are you sure you want to logout?</h2>
-            <div className="flex justify-center gap-4 mt-4">
-              <button
-                onClick={confirmLogout}
-                className="text-white font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#ffbe2a' }}
-              >
-                Yes, Logout
-              </button>
-              <button
-                onClick={cancelLogout}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-4 py-2 rounded-md"
-              >
-                Cancel
-              </button>
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 relative animate-fade-in">
+            <button
+              onClick={cancelLogout}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 mb-4">
+                <LogOut className="h-6 w-6 text-amber-600" />
+              </div>
+              
+              <h3 className="text-xl font-bold text-slate-900 mb-2">
+                Confirm Logout
+              </h3>
+              
+              <p className="text-slate-600 mb-6">
+                Do you really want to logout?
+              </p>
+
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={cancelLogout}
+                  className="px-6 py-2.5 bg-slate-200 text-slate-800 font-semibold hover:bg-slate-300 transition-colors duration-200 uppercase text-sm tracking-wide"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  className="px-6 py-2.5  bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors duration-200 uppercase text-sm tracking-wide"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>
