@@ -85,12 +85,12 @@ const FileManagement = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <nav className="bg-amber-400 border-b-4 border-black fixed top-0 left-0 right-0 z-50 h-16">
+      <nav className="black fixed top-0 left-0 right-0 z-50 h-16">
         <Navbar />
       </nav>
 
       {/* Side Panel */}
-      <aside className="bg-amber-100 border-r-4 border-black fixed left-0 top-0 bottom-0 w-16 md:w-64 z-40 overflow-y-auto">
+      <aside className="fixed left-0 top-0 bottom-0 w-16 md:w-64 z-40 overflow-y-auto">
         <SidePannel />
       </aside>
 
