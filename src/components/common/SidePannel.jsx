@@ -100,7 +100,7 @@ const SettingIcon = (
   return (
     <>
       {/* Sidebar */}
-<div className="fixed top-24 md:w-64 w-16 border-r border-gray-300 min-h-screen" style={{ backgroundColor: '#ffbe2a' }}>      
+<div className="fixed top-20 md:w-64 w-16 border-r border-gray-300 min-h-screen " >      
         <div className="pt-6 flex flex-col">
           {sidebarLinks.map((item, index) => (
             <button
@@ -108,7 +108,7 @@ const SettingIcon = (
               onClick={() => handleItemClick(index, item.path)}
               className={`flex items-center py-4 px-6 gap-3 transition-colors duration-200 text-left cursor-pointer
                 ${activeIndex === index
-                  ? "border-l-4 bg-black/10 border-black text-black font-semibold"
+                  ? "border-l-4 bg-[#ffbe2a]/60 border-black text-black font-semibold"
                   : "hover:bg-black/5 text-black"
                 }
                 ${item.name === "Logout" ? "mt-4" : ""}`}
@@ -123,7 +123,7 @@ const SettingIcon = (
       </div>
 
       {/* Logout Confirmation Modal */}
-      {showLogoutPopup && (
+      {showLogoutModal && (
          <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-[99999] p-4">
           <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 relative animate-fade-in">
             <button

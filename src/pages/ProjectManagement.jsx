@@ -108,7 +108,7 @@ const ProjectManagement = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar/>
       <SidePannel/>
-      <div className="ml-64 pt-16">
+      <div className="ml-64 pt-26">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-start justify-between">
           <div>
@@ -117,7 +117,7 @@ const ProjectManagement = () => {
           </div>
           <button
             onClick={() => setShowNewProjectModal(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-black hover:text-amber-300 transition-colors"
           >
             <Plus className="w-5 h-5" />
             New Project
@@ -280,7 +280,7 @@ const ProjectManagement = () => {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        className="bg-black h-2 rounded-full transition-all"
                         style={{ width: `${project.progress}%` }}
                       />
                     </div>
