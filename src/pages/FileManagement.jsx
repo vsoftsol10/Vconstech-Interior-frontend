@@ -85,7 +85,7 @@ const FileManagement = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <nav className="black fixed top-0 left-0 right-0 z-50 h-16">
+      <nav className="fixed top-0 left-0 right-0 z-50 h-16">
         <Navbar />
       </nav>
 
