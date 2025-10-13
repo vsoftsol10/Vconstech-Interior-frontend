@@ -66,7 +66,6 @@ const SettingIcon = (
     { name: "Financial Management", path: "/financial-management", icon: financialIcon },
     { name: "Contract Management", path: "/contract", icon: contractIcon },
     { name: "File Management", path: "/file-managememt", icon: fileIcon },
-    { name: "Settings", path: "/settings", icon: SettingIcon },
     { name: "Logout", path: "/", icon: logout },
   ];
 

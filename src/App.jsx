@@ -6,7 +6,6 @@ import Dashboard from "./pages/Dashboard";
 import ProjectManagement from "./pages/ProjectManagement";
 import MaterialManagement from "./pages/MaterialManagement";
 import FinancialManagement from "./pages/FinancialManagement";
-import Settings from "./pages/Settings";
 import ContractManagement from "./pages/ContractManagement";
 import FileManagement from "./pages/FileManagement";
 function App() {
@@ -21,7 +20,6 @@ function App() {
       <Route path="/financial" element={<FinancialManagement/>} />
       <Route path="/file-managememt" element={<FileManagement/>} />
       <Route path="/financial-management" element={<FinancialManagement/>} />
-      <Route path="/settings" element={<Settings/>}/>
 
     </Routes>
   );
