@@ -6,6 +6,7 @@ import financial from "../../assets/Icon/FinancialManagement.png";
 import contract from "../../assets/Icon/ContractManagement.png";
 import file from "../../assets/Icon/FileManagement.png";
 import settings from "../../assets/Icon/Settings.png";
+import { LogOut, X } from "lucide-react";
 
 const SidePannel = () => {
   const navigate = useNavigate();
@@ -59,13 +60,13 @@ const SettingIcon = (
   );
 
   const sidebarLinks = [
-    { name: "Dashboard", path: "/contractorDashboard", icon: dashboardicon },
-    { name: "Project Management", path: "/add-site-engg", icon: projectIcon },
-    { name: "Material Management", path: "/create-new-project", icon: materialIcon },
-    { name: "Financial Management", path: "/our-engg", icon: financialIcon },
-    { name: "Contract Management", path: "/our-projects", icon: contractIcon },
-    { name: "File Management", path: "/file-management", icon: fileIcon },
-    { name: "Settings", path: "/notifications", icon: SettingIcon },
+    { name: "Dashboard", path: "/dashboard", icon: dashboardicon },
+    { name: "Project Management", path: "/project", icon: projectIcon },
+    { name: "Material Management", path: "/material", icon: materialIcon },
+    { name: "Financial Management", path: "/financial-management", icon: financialIcon },
+    { name: "Contract Management", path: "/contract", icon: contractIcon },
+    { name: "File Management", path: "/file-managememt", icon: fileIcon },
+    { name: "Settings", path: "/settings", icon: SettingIcon },
     { name: "Logout", path: "/", icon: logout },
   ];
 
@@ -99,8 +100,8 @@ const SettingIcon = (
   return (
     <>
       {/* Sidebar */}
-      <div className="bg-gradient-to-r from-[#ffbe2a] via-amber-300 to-[#ffbe2a] fixed top-20 md:w-64 w-16 border-r border-gray-300 min-h-screen">
-        <div className="pt-4 flex flex-col">
+<div className="fixed top-24 md:w-64 w-16 border-r border-gray-300 min-h-screen" style={{ backgroundColor: '#ffbe2a' }}>      
+        <div className="pt-6 flex flex-col">
           {sidebarLinks.map((item, index) => (
             <button
               key={index}
@@ -123,7 +124,7 @@ const SettingIcon = (
 
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+         <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-[99999] p-4">
           <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 relative animate-fade-in">
             <button
               onClick={cancelLogout}
