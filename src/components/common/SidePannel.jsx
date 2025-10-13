@@ -63,7 +63,7 @@ const SettingIcon = (
     { name: "Dashboard", path: "/dashboard", icon: dashboardicon },
     { name: "Project Management", path: "/project", icon: projectIcon },
     { name: "Material Management", path: "/material", icon: materialIcon },
-    { name: "Financial Management", path: "/financial", icon: financialIcon },
+    { name: "Financial Management", path: "/financial-management", icon: financialIcon },
     { name: "Contract Management", path: "/contract", icon: contractIcon },
     { name: "File Management", path: "/file-managememt", icon: fileIcon },
     { name: "Settings", path: "/settings", icon: SettingIcon },
@@ -141,9 +141,7 @@ const SettingIcon = (
               
               <h3 className="text-xl font-bold text-slate-900 mb-2">
                 Confirm Logout
-              </h3>
-              
-              <p className="text-slate-600 mb-6">
+              </h3>     <p className="text-slate-600 mb-6">
                 Do you really want to logout?
               </p>
 

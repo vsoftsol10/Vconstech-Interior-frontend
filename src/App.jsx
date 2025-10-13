@@ -9,9 +9,7 @@ import FinancialManagement from "./pages/FinancialManagement";
 import Settings from "./pages/Settings";
 import ContractManagement from "./pages/ContractManagement";
 import FileManagement from "./pages/FileManagement";
-
 function App() {
-  const [count, setCount] = useState(0);
 
   return (
     <Routes>
@@ -22,6 +20,7 @@ function App() {
       <Route path="/contract" element={<ContractManagement/>} />
       <Route path="/financial" element={<FinancialManagement/>} />
       <Route path="/file-managememt" element={<FileManagement/>} />
+      <Route path="/financial-management" element={<FinancialManagement/>} />
       <Route path="/settings" element={<Settings/>}/>
 
     </Routes>
