@@ -95,7 +95,7 @@ const FileManagement = () => {
       </aside>
 
       {/* Main Content */}
-      <div className="pt-20 pl-16 md:pl-64 p-4 md:p-15 bg-gray-50 min-h-screen">
+      <div className="mt-16 pl-16 md:pl-64 p-4 md:p-15 bg-gray-50 min-h-screen">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6 md:mb-8 text-center px-2 mt-6 sm:mt-10">
             <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-black mb-2">
