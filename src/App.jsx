@@ -8,6 +8,7 @@ import MaterialManagement from "./pages/MaterialManagement";
 import FinancialManagement from "./pages/FinancialManagement";
 import ContractManagement from "./pages/ContractManagement";
 import FileManagement from "./pages/FileManagement";
+import EmployeeLogin from "./components/Employee/EmployeeLogin";
 function App() {
 
   return (
@@ -21,6 +22,7 @@ function App() {
       <Route path="/file-managememt" element={<FileManagement/>} />
       <Route path="/financial-management" element={<FinancialManagement/>} />
 
+      <Route path="/employee-login" element={<EmployeeLogin/>} />
     </Routes>
   );
 }

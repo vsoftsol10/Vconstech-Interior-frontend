@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit2, Trash2, Plus, Save, X } from 'lucide-react';
+import { Edit2, Trash2, Plus, Save, X, IndianRupee } from 'lucide-react';
 import Navbar from '../components/common/Navbar';
 import SidePannel from '../components/common/SidePannel';
 export default function ContractManagement() {
@@ -292,7 +292,7 @@ export default function ContractManagement() {
                         <td className="px-4 py-3 text-gray-700">{contract.contractorName}</td>
                         <td className="px-4 py-3 text-gray-700">{contract.contactNumber}</td>
                         <td className="px-4 py-3 text-gray-900 font-semibold">
-                          ${contract.contractAmount.toLocaleString()}
+                        ₹ {contract.contractAmount.toLocaleString()}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(contract.workStatus)}`}>
