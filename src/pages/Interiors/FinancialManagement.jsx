@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Edit2, Printer, Plus, Save, X } from 'lucide-react';
-import Navbar from '../components/common/Navbar';
-import SidePannel from '../components/common/SidePannel';
+import Navbar from '../../components/common/Navbar';
+import SidePannel from '../../components/common/SidePannel';
 const FinancialManagement = () => {
   const [projects, setProjects] = useState([
     {

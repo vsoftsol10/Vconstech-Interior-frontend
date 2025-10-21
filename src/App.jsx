@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
 import "./App.css";
-import Dashboard from "./pages/Dashboard";
-import ProjectManagement from "./pages/ProjectManagement";
-import MaterialManagement from "./pages/MaterialManagement";
-import FinancialManagement from "./pages/FinancialManagement";
-import ContractManagement from "./pages/ContractManagement";
-import FileManagement from "./pages/FileManagement";
+import Dashboard from "./pages/Interiors/Dashboard";
+import ProjectManagement from "./pages/Interiors/ProjectManagement";
+import MaterialManagement from "./pages/Interiors/MaterialManagement";
+import FinancialManagement from "./pages/Interiors/FinancialManagement";
+import ContractManagement from "./pages/Interiors/ContractManagement";
+import FileManagement from "./pages/Interiors/FileManagement";
 import EmployeeLogin from "./components/Employee/EmployeeLogin";
+import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
 function App() {
 
   return (
@@ -23,6 +24,8 @@ function App() {
       <Route path="/financial-management" element={<FinancialManagement/>} />
 
       <Route path="/employee-login" element={<EmployeeLogin/>} />
+      <Route path="/employee-dashboard" element={<EmployeeDashboard/>} />
+
     </Routes>
   );
 }

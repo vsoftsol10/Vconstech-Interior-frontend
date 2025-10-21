@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Folder, File, Trash2, Upload, X, Save, Vault } from 'lucide-react';
-import Navbar from '../components/common/Navbar';
-import SidePannel from '../components/common/SidePannel';
+import Navbar from '../../components/common/Navbar';
+import SidePannel from '../../components/common/SidePannel';
 const FileManagement = () => {
   const [documents, setDocuments] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);

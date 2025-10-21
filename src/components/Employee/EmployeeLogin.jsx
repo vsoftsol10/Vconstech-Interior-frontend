@@ -1,31 +1,41 @@
 import React, { useState } from 'react';
 import { User, Lock } from 'lucide-react';
+import loginBack from "../../assets/login-BCK-2.mp4"
+import { useNavigate } from 'react-router-dom';
 
 export default function EmployeeLogin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const navigate=useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    navigate("/employee-dashboard")
     console.log('Login attempt:', { username, password });
   };
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Side - Image Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-amber-900 via-orange-800 to-amber-950">
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-40"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80')"
-          }}
-        />
+      {/* Left Side - Video Background Section */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-amber-900/70 via-orange-800/60 to-amber-950/50 overflow-hidden">
+        {/* Video Background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover opacity-40"
+        >
+          <source src={loginBack} type="video/mp4" />
+        </video>
+        
+        {/* Content Overlay */}
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12 w-full">
           <h1 className="text-6xl font-bold mb-6 tracking-wider uppercase">Employee</h1>
           <div className="w-16 h-1 bg-amber-400 mb-6"></div>
-          <h2 className="text-2xl font-light mb-4">Enterprise Resource Planning</h2>
+          <h2 className="text-2xl font-light mb-4">Login Portal</h2>
           <p className="text-center text-lg font-light max-w-md">
-            Streamline your business operations with our comprehensive ERP solution
+            Access your dashboard to manage project tasks, materials, files seamlessly through our ERP system.
           </p>
         </div>
       </div>
@@ -37,7 +47,7 @@ export default function EmployeeLogin() {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">WELCOME</h2>
               <p className="text-gray-500 text-sm uppercase tracking-wide">
-                Sign in to your account
+                Sign in to access your dashboard
               </p>
             </div>
 
