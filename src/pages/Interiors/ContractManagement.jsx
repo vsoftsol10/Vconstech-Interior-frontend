@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, Plus, Save, X, IndianRupee } from 'lucide-react';
-import Navbar from '../components/common/Navbar';
-import SidePannel from '../components/common/SidePannel';
+import Navbar from '../../components/common/Navbar';
+import SidePannel from '../../components/common/SidePannel';
 export default function ContractManagement() {
   const [contracts, setContracts] = useState([
     {

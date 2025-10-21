@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutGrid, Package, DollarSign, FileText, TrendingUp, Calendar, Users, ArrowRight, ChevronLeft, ChevronRight, IndianRupee } from 'lucide-react';
-import Navbar from '../components/common/Navbar';
-import SidePannel from '../components/common/SidePannel';
+import Navbar from '../../components/common/Navbar';
+import SidePannel from '../../components/common/SidePannel';
 
 const Dashboard = () => {
   const [currentSlide, setCurrentSlide] = useState(0);

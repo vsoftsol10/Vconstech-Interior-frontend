@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Plus, Search, Filter,  IndianRupee, FileText,  CheckCircle, Clock, AlertCircle, Menu } from 'lucide-react';
-import Navbar from '../components/common/Navbar';
-import SidePannel from '../components/common/SidePannel';
-import StatsCard from '../components/ProjectManagement/StatsCard';
-import ProjectCard from '../components/ProjectManagement/ProjectCard';
-import ProjectFormModal from '../components/ProjectManagement/ProjectFormModal';
-import ProjectDetailsModal from '../components/ProjectManagement/ProjectDetailsModal';
+import Navbar from '../../components/common/Navbar';
+import SidePannel from '../../components/common/SidePannel';
+import StatsCard from '../../components/ProjectManagement/StatsCard';
+import ProjectCard from '../../components/ProjectManagement/ProjectCard';
+import ProjectFormModal from '../../components/ProjectManagement/ProjectFormModal';
+import ProjectDetailsModal from '../../components/ProjectManagement/ProjectDetailsModal';
 
 // Main Project Management Component
 const ProjectManagement = () => {

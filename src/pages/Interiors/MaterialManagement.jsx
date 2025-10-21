@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Package, TrendingUp, AlertCircle, DollarSign } from 'lucide-react';
-import DashboardTab from '../components/MaterialManagement/DashBoardTab';
-import MaterialsTab from '../components/MaterialManagement/MaterialsTab';
-import ProjectsTab from '../components/MaterialManagement/ProjectsTab';
-import MaterialForm from '../components/MaterialManagement/MaterialForm';
-import ModalMaterial from '../components/MaterialManagement/ModalMaterial';
-import Navbar from '../components/common/Navbar';
-import SidePannel from '../components/common/SidePannel';
+import DashboardTab from '../../components/MaterialManagement/DashBoardTab';
+import MaterialsTab from '../../components/MaterialManagement/MaterialsTab';
+import ProjectsTab from '../../components/MaterialManagement/ProjectsTab';
+import MaterialForm from '../../components/MaterialManagement/MaterialForm';
+import ModalMaterial from '../../components/MaterialManagement/ModalMaterial';
+import Navbar from '../../components/common/Navbar';
+import SidePannel from '../../components/common/SidePannel';
 
 // Main App Component
 const MaterialManagement = () => {
