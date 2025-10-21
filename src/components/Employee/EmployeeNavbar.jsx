@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Bell, LogOut, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 
 const EmployeeNavbar = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const navigate =useNavigate();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -33,9 +34,43 @@ const EmployeeNavbar = () => {
             <div className="flex items-center space-x-8">
               <div className="flex-shrink-0 flex items-center gap-3">
                 <h1 className="text-xl sm:text-3xl uppercase font-black text-slate-900 tracking-tight">
-                  Interiors
+                  Employee
                 </h1>
               </div>
+            </div>
+
+            {/* Center - Navigation Links */}
+            <div className="hidden md:flex items-center space-x-1">
+              <Link
+                to="/employee/projects"
+                className={`px-4 py-2 rounded-lg font-semibold text-sm uppercase tracking-wide transition-colors duration-200 ${
+                  location.pathname === '/employee/projects'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-800 hover:bg-slate-900/10'
+                }`}
+              >
+                Projects
+              </Link>
+              <Link
+                to="/employee/material-management"
+                className={`px-4 py-2 rounded-lg font-semibold text-sm uppercase tracking-wide transition-colors duration-200 ${
+                  location.pathname === '/employee/material-management'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-800 hover:bg-slate-900/10'
+                }`}
+              >
+                Material Management
+              </Link>
+              <Link
+                to="/employee/file-management"
+                className={`px-4 py-2 rounded-lg font-semibold text-sm uppercase tracking-wide transition-colors duration-200 ${
+                  location.pathname === '/employee/file-management'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-800 hover:bg-slate-900/10'
+                }`}
+              >
+                File Management
+              </Link>
             </div>
 
             {/* Right side - Icons */}
