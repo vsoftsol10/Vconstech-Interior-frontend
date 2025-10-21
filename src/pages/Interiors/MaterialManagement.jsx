@@ -104,7 +104,7 @@ const MaterialManagement = () => {
     setNewMaterial({ name: '', category: 'Paint', unit: 'piece', defaultRate: '', vendor: '', description: '' });
     setShowAddMaterial(false);
   };
-
+   
   const handleUpdateMaterial = () => {
     setMaterials(materials.map(m => m.id === editingMaterial.id ? editingMaterial : m));
     setEditingMaterial(null);
@@ -166,7 +166,7 @@ const MaterialManagement = () => {
 
       <div className="bg-white border-b border-gray-200 px-6">
         <div className="flex space-x-8">
-          {['dashboard', 'materials', 'projects'].map(tab => (
+          {['dashboard', 'projects'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -192,7 +192,7 @@ const MaterialManagement = () => {
           />
         )}
 
-        {activeTab === 'materials' && (
+        {/* {activeTab === 'materials' && (
           <MaterialsTab
             materials={filteredMaterials}
             searchTerm={searchTerm}
@@ -204,7 +204,7 @@ const MaterialManagement = () => {
             onEditMaterial={setEditingMaterial}
             onDeleteMaterial={handleDeleteMaterial}
           />
-        )}
+        )} */}
 
         {activeTab === 'projects' && (
           <ProjectsTab
@@ -375,7 +375,7 @@ const MaterialManagement = () => {
             </button>
           </>
         }
-      >
+      >    
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
