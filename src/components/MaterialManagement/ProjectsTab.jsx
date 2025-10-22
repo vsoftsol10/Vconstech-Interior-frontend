@@ -67,13 +67,13 @@ const ProjectsTab = ({
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       {/* Top Section */}
-      <div className="bg-white rounded-xl shadow p-4 sm:p-6">
+      <div className="bg-white rounded-lg md:rounded-xl shadow p-3 sm:p-4 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
           {/* Select Project with Search */}
           <div className="flex-1 w-full relative" ref={dropdownRef}>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               Select Project
             </label>
             <div className="relative">
@@ -86,10 +86,10 @@ const ProjectsTab = ({
                 }}
                 onFocus={() => setIsDropdownOpen(true)}
                 placeholder={selectedProjectData ? `${selectedProjectData.name} - ${selectedProjectData.status}` : "Search projects..."}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
               <svg
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 pointer-events-none"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -98,23 +98,23 @@ const ProjectsTab = ({
               </svg>
 
               {isDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 sm:max-h-60 overflow-y-auto">
                   {filteredProjects.length > 0 ? (
                     filteredProjects.map((project) => (
                       <div
                         key={project.id}
                         onClick={() => handleProjectSelect(project.id)}
-                        className={`px-4 py-3 cursor-pointer hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                        className={`px-3 sm:px-4 py-2.5 sm:py-3 cursor-pointer hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
                           project.id === selectedProject ? "bg-blue-100" : ""
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium text-gray-900">{project.name}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-gray-900 text-sm sm:text-base truncate">{project.name}</div>
                             <div className="text-xs text-gray-500 mt-0.5">{project.status}</div>
                           </div>
                           {project.id === selectedProject && (
-                            <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 ml-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           )}
@@ -122,7 +122,7 @@ const ProjectsTab = ({
                       </div>
                     ))
                   ) : (
-                    <div className="px-4 py-3 text-gray-500 text-sm text-center">
+                    <div className="px-3 sm:px-4 py-2.5 sm:py-3 text-gray-500 text-xs sm:text-sm text-center">
                       No projects found
                     </div>
                   )}
@@ -134,14 +134,16 @@ const ProjectsTab = ({
       </div>
 
       {/* Materials Allocated Table */}
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+      <div className="bg-white rounded-lg md:rounded-xl shadow overflow-hidden">
+        <div className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border-b border-gray-200">
+          <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">
             Materials Allocated
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm sm:text-base divide-y divide-gray-200">
+        
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="min-w-full text-sm divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 {[
@@ -153,7 +155,7 @@ const ProjectsTab = ({
                 ].map((header) => (
                   <th
                     key={header}
-                    className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs sm:text-sm whitespace-nowrap"
+                    className="px-4 lg:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs whitespace-nowrap"
                   >
                     {header}
                   </th>
@@ -165,7 +167,7 @@ const ProjectsTab = ({
                 <tr>
                   <td
                     colSpan="5"
-                    className="px-3 sm:px-6 py-8 text-center text-gray-500 text-sm sm:text-base"
+                    className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm"
                   >
                     No materials allocated yet
                   </td>
@@ -176,21 +178,21 @@ const ProjectsTab = ({
                     key={idx}
                     className="hover:bg-gray-50 transition-colors duration-200"
                   >
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 font-medium">
+                    <td className="px-4 lg:px-6 py-3 text-gray-900 font-medium text-sm">
                       {pm.projectName}
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900">
+                    <td className="px-4 lg:px-6 py-3 text-gray-900 text-sm">
                       {pm.material?.name}
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 whitespace-nowrap">
+                    <td className="px-4 lg:px-6 py-3 text-gray-900 whitespace-nowrap text-sm">
                       {pm.used} {pm.material?.unit}
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 font-semibold whitespace-nowrap">
+                    <td className="px-4 lg:px-6 py-3 text-gray-900 font-semibold whitespace-nowrap text-sm">
                       ₹{((pm.material?.defaultRate || 0) * pm.used).toLocaleString()}
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                    <td className="px-4 lg:px-6 py-3">
                       <span
-                        className={`inline-block px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-full whitespace-nowrap ${
+                        className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
                           pm.status === "Active"
                             ? "bg-green-100 text-green-800"
                             : pm.status === "Completed"
@@ -207,24 +209,65 @@ const ProjectsTab = ({
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-gray-200">
+          {projectMaterials.length === 0 ? (
+            <div className="px-4 py-8 text-center text-gray-500 text-sm">
+              No materials allocated yet
+            </div>
+          ) : (
+            projectMaterials.map((pm, idx) => (
+              <div key={idx} className="p-4 space-y-2.5">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 text-sm">{pm.projectName}</div>
+                    <div className="text-gray-600 text-sm mt-0.5">{pm.material?.name}</div>
+                  </div>
+                  <span
+                    className={`inline-block px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ml-2 flex-shrink-0 ${
+                      pm.status === "Active"
+                        ? "bg-green-100 text-green-800"
+                        : pm.status === "Completed"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {pm.status}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Used:</span>
+                  <span className="text-gray-900 font-medium">{pm.used} {pm.material?.unit}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Cost:</span>
+                  <span className="text-gray-900 font-semibold">₹{((pm.material?.defaultRate || 0) * pm.used).toLocaleString()}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Material Requests Table */}
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+      <div className="bg-white rounded-lg md:rounded-xl shadow overflow-hidden">
+        <div className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border-b border-gray-200">
+          <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">
             Material Requests
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm sm:text-base divide-y divide-gray-200">
+        
+        {/* Desktop Table View */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="min-w-full text-sm divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 {["Engineer", "Project Name", "Material Requested", "Quantity", "Status", "Action"].map(
                   (header) => (
                     <th
                       key={header}
-                      className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs sm:text-sm whitespace-nowrap"
+                      className="px-4 lg:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs whitespace-nowrap"
                     >
                       {header}
                     </th>
@@ -237,7 +280,7 @@ const ProjectsTab = ({
                 <tr>
                   <td
                     colSpan="6"
-                    className="px-3 sm:px-6 py-8 text-center text-gray-500 text-sm sm:text-base"
+                    className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm"
                   >
                     No material requests yet
                   </td>
@@ -248,21 +291,21 @@ const ProjectsTab = ({
                     key={idx}
                     className="hover:bg-gray-50 transition-colors duration-200"
                   >
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 font-medium">
+                    <td className="px-4 lg:px-6 py-3 text-gray-900 font-medium text-sm">
                       {request.engineerName}
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900">
+                    <td className="px-4 lg:px-6 py-3 text-gray-900 text-sm">
                       {request.projectName}
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900">
+                    <td className="px-4 lg:px-6 py-3 text-gray-900 text-sm">
                       {request.materialName}
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 whitespace-nowrap">
+                    <td className="px-4 lg:px-6 py-3 text-gray-900 whitespace-nowrap text-sm">
                       {request.quantity} {request.unit}
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                    <td className="px-4 lg:px-6 py-3">
                       <span
-                        className={`inline-block px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-full whitespace-nowrap ${
+                        className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
                           request.status === "Accepted"
                             ? "bg-green-100 text-green-800"
                             : request.status === "Rejected"
@@ -273,24 +316,24 @@ const ProjectsTab = ({
                         {request.status}
                       </span>
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                    <td className="px-4 lg:px-6 py-3">
                       {request.status === "Pending" ? (
-                        <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="flex gap-2">
                           <button
                             onClick={() => request.onAccept && request.onAccept(request.id)}
-                            className="px-3 py-1.5 bg-[#ffbe2a] text-black text-xs sm:text-sm font-medium rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+                            className="px-3 py-1.5 bg-[#ffbe2a] text-black text-xs font-medium rounded-lg hover:bg-[#e6ab25] transition-colors whitespace-nowrap"
                           >
                             Accept
                           </button>
                           <button
                             onClick={() => handleRejectClick(request.id)}
-                            className="px-3 py-1.5 bg-red-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
+                            className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
                           >
                             Reject
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs sm:text-sm text-gray-500">
+                        <span className="text-xs text-gray-500">
                           {request.status}
                         </span>
                       )}
@@ -301,39 +344,96 @@ const ProjectsTab = ({
             </tbody>
           </table>
         </div>
+
+        {/* Mobile/Tablet Card View */}
+        <div className="lg:hidden divide-y divide-gray-200">
+          {materialRequests.length === 0 ? (
+            <div className="px-4 py-8 text-center text-gray-500 text-sm">
+              No material requests yet
+            </div>
+          ) : (
+            materialRequests.map((request, idx) => (
+              <div key={idx} className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 text-sm">{request.engineerName}</div>
+                    <div className="text-gray-600 text-sm mt-0.5">{request.projectName}</div>
+                  </div>
+                  <span
+                    className={`inline-block px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ml-2 flex-shrink-0 ${
+                      request.status === "Accepted"
+                        ? "bg-green-100 text-green-800"
+                        : request.status === "Rejected"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {request.status}
+                  </span>
+                </div>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Material:</span>
+                    <span className="text-gray-900 font-medium">{request.materialName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Quantity:</span>
+                    <span className="text-gray-900 font-medium">{request.quantity} {request.unit}</span>
+                  </div>
+                </div>
+                {request.status === "Pending" && (
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => request.onAccept && request.onAccept(request.id)}
+                      className="flex-1 px-3 py-2 bg-[#ffbe2a] text-black text-sm font-medium rounded-lg hover:bg-[#e6ab25] transition-colors"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleRejectClick(request.id)}
+                      className="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Reject Modal */}
       {showRejectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
               Reject Material Request
             </h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
               Please provide a reason for rejecting this material request:
             </p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Enter reason for rejection..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-sm"
               rows="4"
               autoFocus
             />
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-6">
               <button
                 onClick={handleRejectCancel}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                className="flex-1 px-3 sm:px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRejectConfirm}
                 disabled={!rejectReason.trim()}
-                className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="flex-1 px-3 sm:px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
-                Confirm Reject
+                Confirm
               </button>
             </div>
           </div>
