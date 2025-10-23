@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Package, TrendingUp, AlertCircle, DollarSign } from 'lucide-react';
-import DashboardTab from '../../components/MaterialManagement/DashBoardTab';
+import DashboardTab from '../../components/MaterialManagement/DashboardTab';
 import MaterialsTab from '../../components/MaterialManagement/MaterialsTab';
 import ProjectsTab from '../../components/MaterialManagement/ProjectsTab';
 import MaterialForm from '../../components/MaterialManagement/MaterialForm';
@@ -156,274 +156,269 @@ const MaterialManagement = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar/>
-      <SidePannel/>
-       <div className="ml-64 pt-26">
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <h1 className="text-2xl font-bold text-gray-900">Material Management System</h1>
-        <p className="text-sm text-gray-600 mt-1">Track and manage materials across all projects</p>
-      </div>
+      <nav className="fixed top-0 left-0 right-0 z-50 h-16">
+        <Navbar />
+      </nav>
 
-      <div className="bg-white border-b border-gray-200 px-6">
-        <div className="flex space-x-8">
-          {['dashboard', 'projects'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === tab
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+      <aside className="fixed left-0 top-16 bottom-0 w-16 md:w-64 z-40 overflow-y-auto">
+        <SidePannel />
+      </aside>
+
+      <div className="mt-26 pl-16 md:pl-64 min-h-screen">
+        {/* Header Section */}
+        <div className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">Material Management System</h1>
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">Track and manage materials across all projects</p>
         </div>
-      </div>
 
-      <div className="p-6">
-        {activeTab === 'dashboard' && (
-          <DashboardTab
-            metrics={dashboardMetrics}
-            usageLogs={usageLogs}
-            projects={projects}
-            materials={materials}
-          />
-        )}
+        {/* Tabs Section */}
+        <div className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 overflow-x-auto">
+          <div className="flex space-x-4 sm:space-x-8">
+            {['dashboard', 'projects'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`py-3 sm:py-4 px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
+                  activeTab === tab
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {/* {activeTab === 'materials' && (
-          <MaterialsTab
-            materials={filteredMaterials}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            filterCategory={filterCategory}
-            setFilterCategory={setFilterCategory}
-            categories={categories}
-            onAddMaterial={() => setShowAddMaterial(true)}
-            onEditMaterial={setEditingMaterial}
-            onDeleteMaterial={handleDeleteMaterial}
-          />
-        )} */}
+        {/* Content Section */}
+        <div>
+          {activeTab === 'dashboard' && (
+            <DashboardTab
+              metrics={dashboardMetrics}
+              usageLogs={usageLogs}
+              projects={projects}
+              materials={materials}
+            />
+          )}
 
-        {activeTab === 'projects' && (
-          <ProjectsTab
-            projects={projects}
-            selectedProject={selectedProject}
-            setSelectedProject={setSelectedProject}
-            projectMaterials={getProjectMaterialsWithDetails(selectedProject)}
-            usageLogs={getProjectUsageLogs(selectedProject)}
-            onAddProjectMaterial={() => setShowAddProjectMaterial(true)}
-            onLogUsage={() => setShowUsageLog(true)}
-          />
-        )}
-      </div>
+          {activeTab === 'projects' && (
+            <ProjectsTab
+              projects={projects}
+              selectedProject={selectedProject}
+              setSelectedProject={setSelectedProject}
+              projectMaterials={getProjectMaterialsWithDetails(selectedProject)}
+              usageLogs={getProjectUsageLogs(selectedProject)}
+              onAddProjectMaterial={() => setShowAddProjectMaterial(true)}
+              onLogUsage={() => setShowUsageLog(true)}
+            />
+          )}
+        </div>
 
-      {/* Add Material Modal */}
-      <ModalMaterial
-        isOpen={showAddMaterial}
-        onClose={() => setShowAddMaterial(false)}
-        title="Add New Material"
-        footer={
-          <>
-            <button
-              onClick={() => setShowAddMaterial(false)}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAddMaterial}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Add Material
-            </button>
-          </>
-        }
-      >
-        <MaterialForm
-          material={newMaterial}
-          onChange={setNewMaterial}
-          categories={categories}
-        />
-      </ModalMaterial>
-
-      {/* Edit Material Modal */}
-      <ModalMaterial
-        isOpen={!!editingMaterial}
-        onClose={() => setEditingMaterial(null)}
-        title="Edit Material"
-        footer={
-          <>
-            <button
-              onClick={() => setEditingMaterial(null)}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleUpdateMaterial}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Update Material
-            </button>
-          </>
-        }
-      >
-        {editingMaterial && (
+        {/* Add Material Modal */}
+        <ModalMaterial
+          isOpen={showAddMaterial}
+          onClose={() => setShowAddMaterial(false)}
+          title="Add New Material"
+          footer={
+            <>
+              <button
+                onClick={() => setShowAddMaterial(false)}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddMaterial}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Add Material
+              </button>
+            </>
+          }
+        >
           <MaterialForm
-            material={editingMaterial}
-            onChange={setEditingMaterial}
+            material={newMaterial}
+            onChange={setNewMaterial}
             categories={categories}
           />
-        )}
-      </ModalMaterial>
+        </ModalMaterial>
 
-      {/* Add Project Material Modal */}
-      <ModalMaterial
-        isOpen={showAddProjectMaterial}
-        onClose={() => setShowAddProjectMaterial(false)}
-        title="Add Material to Project"
-        footer={
-          <>
-            <button
-              onClick={() => setShowAddProjectMaterial(false)}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAddProjectMaterial}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Add to Project
-            </button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Select Material</label>
-            <select
-              value={newProjectMaterial.materialId}
-              onChange={(e) => setNewProjectMaterial({...newProjectMaterial, materialId: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Choose a material...</option>
-              {materials.map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.name} ({m.category} - {m.unit})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+        {/* Edit Material Modal */}
+        <ModalMaterial
+          isOpen={!!editingMaterial}
+          onClose={() => setEditingMaterial(null)}
+          title="Edit Material"
+          footer={
+            <>
+              <button
+                onClick={() => setEditingMaterial(null)}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateMaterial}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Update Material
+              </button>
+            </>
+          }
+        >
+          {editingMaterial && (
+            <MaterialForm
+              material={editingMaterial}
+              onChange={setEditingMaterial}
+              categories={categories}
+            />
+          )}
+        </ModalMaterial>
+
+        {/* Add Project Material Modal */}
+        <ModalMaterial
+          isOpen={showAddProjectMaterial}
+          onClose={() => setShowAddProjectMaterial(false)}
+          title="Add Material to Project"
+          footer={
+            <>
+              <button
+                onClick={() => setShowAddProjectMaterial(false)}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddProjectMaterial}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Add to Project
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Assigned Quantity</label>
-              <input
-                type="number"
-                value={newProjectMaterial.assigned}
-                onChange={(e) => setNewProjectMaterial({...newProjectMaterial, assigned: e.target.value})}
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Material</label>
+              <select
+                value={newProjectMaterial.materialId}
+                onChange={(e) => setNewProjectMaterial({...newProjectMaterial, materialId: e.target.value})}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="100"
+              >
+                <option value="">Choose a material...</option>
+                {materials.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.category} - {m.unit})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Assigned Quantity</label>
+                <input
+                  type="number"
+                  value={newProjectMaterial.assigned}
+                  onChange={(e) => setNewProjectMaterial({...newProjectMaterial, assigned: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Used Quantity</label>
+                <input
+                  type="number"
+                  value={newProjectMaterial.used}
+                  onChange={(e) => setNewProjectMaterial({...newProjectMaterial, used: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={newProjectMaterial.status}
+                onChange={(e) => setNewProjectMaterial({...newProjectMaterial, status: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Active">Active</option>
+                <option value="Not Used">Not Used</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          </div>
+        </ModalMaterial>
+
+        {/* Add Usage Log Modal */}
+        <ModalMaterial
+          isOpen={showUsageLog}
+          onClose={() => setShowUsageLog(false)}
+          title="Log Material Usage"
+          footer={
+            <>
+              <button
+                onClick={() => setShowUsageLog(false)}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddUsageLog}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Log Usage
+              </button>
+            </>
+          }
+        >    
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+              <input
+                type="date"
+                value={newUsageLog.date}
+                onChange={(e) => setNewUsageLog({...newUsageLog, date: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Used Quantity</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Material</label>
+              <select
+                value={newUsageLog.materialId}
+                onChange={(e) => setNewUsageLog({...newUsageLog, materialId: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Choose a material...</option>
+                {getProjectMaterialsWithDetails(selectedProject).map(pm => (
+                  <option key={pm.materialId} value={pm.materialId}>
+                    {pm.material?.name} (Remaining: {pm.remaining} {pm.material?.unit})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Quantity Used</label>
               <input
                 type="number"
-                value={newProjectMaterial.used}
-                onChange={(e) => setNewProjectMaterial({...newProjectMaterial, used: e.target.value})}
+                value={newUsageLog.quantity}
+                onChange={(e) => setNewUsageLog({...newUsageLog, quantity: e.target.value})}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="0"
+                placeholder="20"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
+              <textarea
+                value={newUsageLog.remarks}
+                onChange={(e) => setNewUsageLog({...newUsageLog, remarks: e.target.value})}
+                rows="3"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., For Living Room wall"
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              value={newProjectMaterial.status}
-              onChange={(e) => setNewProjectMaterial({...newProjectMaterial, status: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="Active">Active</option>
-              <option value="Not Used">Not Used</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
-        </div>
-      </ModalMaterial>
-
-      {/* Add Usage Log Modal */}
-      <ModalMaterial
-        isOpen={showUsageLog}
-        onClose={() => setShowUsageLog(false)}
-        title="Log Material Usage"
-        footer={
-          <>
-            <button
-              onClick={() => setShowUsageLog(false)}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAddUsageLog}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              Log Usage
-            </button>
-          </>
-        }
-      >    
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-            <input
-              type="date"
-              value={newUsageLog.date}
-              onChange={(e) => setNewUsageLog({...newUsageLog, date: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Select Material</label>
-            <select
-              value={newUsageLog.materialId}
-              onChange={(e) => setNewUsageLog({...newUsageLog, materialId: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Choose a material...</option>
-              {getProjectMaterialsWithDetails(selectedProject).map(pm => (
-                <option key={pm.materialId} value={pm.materialId}>
-                  {pm.material?.name} (Remaining: {pm.remaining} {pm.material?.unit})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Quantity Used</label>
-            <input
-              type="number"
-              value={newUsageLog.quantity}
-              onChange={(e) => setNewUsageLog({...newUsageLog, quantity: e.target.value})}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="20"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
-            <textarea
-              value={newUsageLog.remarks}
-              onChange={(e) => setNewUsageLog({...newUsageLog, remarks: e.target.value})}
-              rows="3"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., For Living Room wall"
-            />
-          </div>
-        </div>
-      </ModalMaterial>
-    </div>
+        </ModalMaterial>
+      </div>
     </div>
   );
 };
