@@ -128,6 +128,20 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
               />
             </div>
             <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Employee to be assigned *</label>
+              <select 
+                value={project.type}
+                onChange={(e) => onChange({...project, type: e.target.value})}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option>Employee Name</option>
+                <option>Meeran</option>
+                <option>Vigneshwaran</option>
+                <option>Nirmal</option>
+                <option>Akmal</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Project Description</label>
               <textarea 
                 rows="4" 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, FileText, Package, AlertCircle, Clock, CheckCircle, Plus, Upload, FolderOpen, AlertTriangle } from 'lucide-react';
+import { Calendar, FileText, Package, AlertCircle, Clock, CheckCircle, Plus, Upload, FolderOpen, AlertTriangle, X } from 'lucide-react';
 import EmployeeNavbar from '../../components/Employee/EmployeeNavbar';
 
 const EmployeeDashboard = () => {
@@ -11,43 +11,28 @@ const EmployeeDashboard = () => {
   
   const kpiData = [
     { icon: FolderOpen, label: 'Active Projects', value: '8', color: 'bg-blue-500', trend: '+2 this month' },
-    { icon: Calendar, label: "Today's Tasks", value: '5', color: 'bg-green-500', trend: '2 site visits' },
-    { icon: Package, label: 'Pending Requests', value: '12', color: 'bg-orange-500', trend: '3 urgent' },
     { icon: AlertCircle, label: 'Notifications', value: '7', color: 'bg-purple-500', trend: '2 new' },
-    { icon: Clock, label: 'Working Hours', value: '6.5h', color: 'bg-teal-500', trend: 'Today' },
-    { icon: AlertTriangle, label: 'Issues Reported', value: '3', color: 'bg-red-500', trend: '1 critical' }
   ];
 
   const projects = [
     { id: 1, name: 'Residential Complex - Phase 2', client: 'ABC Builders', progress: 75, stage: 'Electrical', status: 'Active', deadline: '2025-11-15' },
     { id: 2, name: 'Commercial Tower', client: 'XYZ Developers', progress: 45, stage: 'Carpentry', status: 'Active', deadline: '2025-12-20' },
-    { id: 3, name: 'Villa Project', client: 'Premium Homes', progress: 90, stage: 'Finishing', status: 'Active', deadline: '2025-10-30' },
-    { id: 4, name: 'Industrial Warehouse', client: 'Logistics Inc', progress: 30, stage: 'Civil', status: 'On Hold', deadline: '2026-01-10' }
-  ];
+     ];
 
   const materialRequests = [
     { id: 1, material: 'Cement - 500 bags', project: 'Residential Complex', date: '2025-10-20', status: 'Pending' },
     { id: 2, material: 'Steel Rods - 2 tons', project: 'Commercial Tower', date: '2025-10-19', status: 'Approved' },
-    { id: 3, material: 'Electrical Wiring', project: 'Villa Project', date: '2025-10-21', status: 'Pending' },
-    { id: 4, material: 'Paint - 100 liters', project: 'Residential Complex', date: '2025-10-18', status: 'Rejected' },
-    { id: 5, material: 'Tiles - 500 sqft', project: 'Commercial Tower', date: '2025-10-22', status: 'Approved' }
+    
   ];
 
   const recentFiles = [
     { name: 'Floor_Plan_Rev3.pdf', project: 'Residential Complex', uploadedBy: 'PM Sharma', date: '2025-10-22', type: 'PDF' },
     { name: 'Electrical_Layout.dwg', project: 'Commercial Tower', uploadedBy: 'Eng. Patel', date: '2025-10-21', type: 'DWG' },
     { name: 'Site_Photo_1.jpg', project: 'Villa Project', uploadedBy: 'Rajesh Kumar', date: '2025-10-20', type: 'Image' },
-    { name: 'Material_Specs.pdf', project: 'Industrial Warehouse', uploadedBy: 'PM Singh', date: '2025-10-19', type: 'PDF' },
-    { name: 'Progress_Report.xlsx', project: 'Residential Complex', uploadedBy: 'Eng. Gupta', date: '2025-10-18', type: 'Excel' }
+   
   ];
 
-  const todayTasks = [
-    { time: '09:00 AM', task: 'Site Inspection - Villa Project', priority: 'high' },
-    { time: '11:30 AM', task: 'Vendor Meeting - Electrical Supplies', priority: 'medium' },
-    { time: '02:00 PM', task: 'Progress Review - Commercial Tower', priority: 'high' },
-    { time: '04:00 PM', task: 'Material Quality Check', priority: 'low' },
-    { time: '05:30 PM', task: 'Team Sync-up Call', priority: 'medium' }
-  ];
+  
 
   const notifications = [
     { type: 'approval', message: 'Steel Rods request approved for Commercial Tower', time: '2 hours ago' },
@@ -82,7 +67,7 @@ const EmployeeDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <EmployeeNavbar/>
       {/* Top Bar */}
-      <div className="bg-white shadow-sm border-b mt-26 border-gray-200">
+      <div className=" mt-26 ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div>
@@ -90,9 +75,7 @@ const EmployeeDashboard = () => {
               <p className="text-sm text-gray-600 mt-1">{currentDate}</p>
             </div>
             <div className="flex items-center gap-4">
-              <button className="p-2 rounded-lg hover:bg-gray-100">
-                <AlertCircle className="w-6 h-6 text-gray-600" />
-              </button>
+             
               <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
                 RK
               </div>
@@ -103,11 +86,11 @@ const EmployeeDashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 gap-4 mb-6">
           {kpiData.map((kpi, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-start justify-between">
-                <div className={`${kpi.color} p-3 rounded-lg`}>
+            <div key={index} className="bg-white rounded-lg text-center shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-start justify-center">
+                <div className={`${kpi.color} p-3 rounded-lg `}>
                   <kpi.icon className="w-6 h-6 text-white" />
                 </div>
               </div>
@@ -172,9 +155,9 @@ const EmployeeDashboard = () => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-bold text-gray-900">Material Request Insights</h2>
                 <div className="flex gap-4 text-sm">
-                  <span className="text-green-600 font-medium">✓ 8 Approved</span>
-                  <span className="text-orange-600 font-medium">⏳ 12 Pending</span>
-                  <span className="text-red-600 font-medium">✗ 3 Rejected</span>
+                  <span className="text-green-600 font-medium">✓ 1 Approved</span>
+                  <span className="text-orange-600 font-medium flex  gap-1"><AlertCircle size={15} className='mt-1'/> 1 Pending</span>
+                  <span className="text-red-600 font-medium flex  gap-1"><X size={15} className='mt-1'/> 0 Rejected</span>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -235,18 +218,8 @@ const EmployeeDashboard = () => {
 
           {/* Right Column - 1/3 width */}
           <div className="space-y-6">
-            {/* Today's Tasks */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Today's Schedule</h2>
-              <div className="space-y-3">
-                {todayTasks.map((task, index) => (
-                  <div key={index} className={`p-3 rounded-lg ${getPriorityColor(task.priority)}`}>
-                    <p className="text-xs font-semibold text-gray-600 mb-1">{task.time}</p>
-                    <p className="text-sm text-gray-900">{task.task}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+
+
 
             {/* Notifications */}
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -272,14 +245,6 @@ const EmployeeDashboard = () => {
                 <button className="w-full flex items-center gap-3 p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                   <Upload className="w-5 h-5" />
                   <span className="font-medium">Upload File</span>
-                </button>
-                <button className="w-full flex items-center gap-3 p-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                  <FolderOpen className="w-5 h-5" />
-                  <span className="font-medium">View Projects</span>
-                </button>
-                <button className="w-full flex items-center gap-3 p-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
-                  <AlertTriangle className="w-5 h-5" />
-                  <span className="font-medium">Report Issue</span>
                 </button>
               </div>
             </div>
