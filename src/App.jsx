@@ -10,6 +10,7 @@ import ContractManagement from "./pages/Interiors/ContractManagement";
 import FileManagement from "./pages/Interiors/FileManagement";
 import EmployeeLogin from "./components/Employee/EmployeeLogin";
 import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
+import AddEngineers from "./pages/Interiors/AddEngineers";
 import EmployeeFileManagement from "./pages/Employee/EmployeeFileManagement";
 import EmployeeMaterialManagement from "./pages/Employee/EmployeeMaterialManagement";
 function App() {
@@ -24,7 +25,7 @@ function App() {
       <Route path="/financial" element={<FinancialManagement/>} />
       <Route path="/file-managememt" element={<FileManagement/>} />
       <Route path="/financial-management" element={<FinancialManagement/>} />
-
+      <Route path="/add-engineers" element={<AddEngineers/>} />
       <Route path="/employee-login" element={<EmployeeLogin/>} />
       <Route path="/employee-dashboard" element={<EmployeeDashboard/>} />
       <Route path="/employee/file-management" element={<EmployeeFileManagement/>} />

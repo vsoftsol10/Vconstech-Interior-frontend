@@ -156,25 +156,28 @@ const MaterialManagement = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar/>
-      <SidePannel/>
-      {/* RESPONSIVE FIX: Changed ml-64 to lg:ml-64 and pt-26 to pt-16 sm:pt-20 lg:pt-26 */}
-      <div className="lg:ml-64 pt-16 sm:pt-20 lg:pt-26">
-        {/* RESPONSIVE FIX: Added responsive padding */}
+      <nav className="fixed top-0 left-0 right-0 z-50 h-16">
+        <Navbar />
+      </nav>
+
+      <aside className="fixed left-0 top-16 bottom-0 w-16 md:w-64 z-40 overflow-y-auto">
+        <SidePannel />
+      </aside>
+
+      <div className="mt-26 pl-16 md:pl-64 min-h-screen">
+        {/* Header Section */}
         <div className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-          {/* RESPONSIVE FIX: Made heading responsive */}
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">Material Management System</h1>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">Track and manage materials across all projects</p>
         </div>
 
-        {/* RESPONSIVE FIX: Added responsive padding and overflow handling */}
+        {/* Tabs Section */}
         <div className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 overflow-x-auto">
           <div className="flex space-x-4 sm:space-x-8">
             {['dashboard', 'projects'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                /* RESPONSIVE FIX: Made text size responsive */
                 className={`py-3 sm:py-4 px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
                   activeTab === tab
                     ? 'border-blue-600 text-blue-600'
@@ -187,7 +190,7 @@ const MaterialManagement = () => {
           </div>
         </div>
 
-        {/* RESPONSIVE FIX: Removed p-6, let child components handle their own padding */}
+        {/* Content Section */}
         <div>
           {activeTab === 'dashboard' && (
             <DashboardTab
@@ -197,20 +200,6 @@ const MaterialManagement = () => {
               materials={materials}
             />
           )}
-
-          {/* {activeTab === 'materials' && (
-            <MaterialsTab
-              materials={filteredMaterials}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              filterCategory={filterCategory}
-              setFilterCategory={setFilterCategory}
-              categories={categories}
-              onAddMaterial={() => setShowAddMaterial(true)}
-              onEditMaterial={setEditingMaterial}
-              onDeleteMaterial={handleDeleteMaterial}
-            />
-          )} */}
 
           {activeTab === 'projects' && (
             <ProjectsTab

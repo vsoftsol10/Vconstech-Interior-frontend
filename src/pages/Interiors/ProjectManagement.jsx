@@ -202,9 +202,9 @@ const ProjectManagement = () => {
       <div className="mt-26 pl-16 md:pl-64 min-h-screen">
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-16 z-30">
           <div className="flex items-center gap-3">
-            <button className="text-gray-600">
+            {/* <button className="text-gray-600">
               <Menu className="w-6 h-6" />
-            </button>
+            </button> */}
             <h1 className="text-lg font-bold text-gray-900">Projects</h1>
           </div>
           <button onClick={() => setShowNewProjectModal(true)} className="flex items-center gap-1 bg-black text-white px-3 py-2 rounded-lg text-sm hover:bg-gray-800">
