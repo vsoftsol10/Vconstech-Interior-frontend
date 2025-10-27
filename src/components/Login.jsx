@@ -50,8 +50,8 @@ const Login = () => {
 
       if (response.ok) {
         setSuccess('Login successful!');
-        sessionStorage.setItem('token', data.token);
-        sessionStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.token);
+localStorage.setItem('user', JSON.stringify(data.user));
         
         setTimeout(() => {
           window.location.href = '/dashboard';
@@ -115,8 +115,8 @@ const Login = () => {
 
       if (response.ok) {
         setSuccess('Account created successfully! Redirecting...');
-        sessionStorage.setItem('token', data.token);
-        sessionStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token);
+localStorage.setItem('user', JSON.stringify(data.user));
         
         setSignupData({
           name: '',
@@ -300,19 +300,7 @@ const Login = () => {
                   </button>
                 </form>
 
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">
-                    Demo Credentials
-                  </p>
-                  <div className="space-y-1">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">Email:</span> demo@example.com
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">Password:</span> demo123
-                    </p>
-                  </div>
-                </div>
+
               </div>
             )}
 
