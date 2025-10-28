@@ -50,8 +50,8 @@ const Login = () => {
 
       if (response.ok) {
         setSuccess('Login successful!');
-      localStorage.setItem('token', data.token);
-localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
         
         setTimeout(() => {
           window.location.href = '/dashboard';
@@ -114,9 +114,9 @@ localStorage.setItem('user', JSON.stringify(data.user));
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess('Account created successfully! Redirecting...');
-        localStorage.setItem('token', data.token);
-localStorage.setItem('user', JSON.stringify(data.user));
+        setSuccess('Login successful!');
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
         
         setSignupData({
           name: '',
