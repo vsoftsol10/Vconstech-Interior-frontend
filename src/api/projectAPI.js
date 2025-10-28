@@ -25,7 +25,7 @@ api.interceptors.response.use(
       // Only redirect if not already on login page
       if (!window.location.pathname.includes('/login')) {
         alert('Your session has expired. Please log in again.');
-        window.location.href = '/login';
+        window.location.href = '/';
       }
     }
     return Promise.reject(error);

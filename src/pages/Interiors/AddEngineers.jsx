@@ -1,60 +1,93 @@
 import React, { useEffect, useState } from 'react'
 import { Search, Edit, Trash2, Phone, MapPin, User, X, Camera, Briefcase } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/common/Navbar'
 import SidePannel from '../../components/common/SidePannel'
-import { createEngineer, getAllEngineers, deleteEngineer } from '../../api/engineerService';
 
-// Sample data - replace with your actual API data
-const sampleEngineers = [
-  {
-    id: 1,
-    name: 'Rajesh Kumar',
-    empId: 'ENG001',
-    phone: '9876543210',
-    alternatePhone: '9123456780',
-    address: '123, MG Road, Bangalore, Karnataka - 560001',
-    profileImage: null
-  },
-  {
-    id: 2,
-    name: 'Priya Sharma',
-    empId: 'ENG002',
-    phone: '9876543211',
-    alternatePhone: '9123456781',
-    address: '456, Anna Salai, Chennai, Tamil Nadu - 600002',
-    profileImage: null
-  },
-  {
-    id: 3,
-    name: 'Amit Patel',
-    empId: 'ENG003',
-    phone: '9876543212',
-    alternatePhone: '',
-    address: '789, Park Street, Kolkata, West Bengal - 700016',
-    profileImage: null
-  },
-  {
-    id: 4,
-    name: 'Sneha Reddy',
-    empId: 'ENG004',
-    phone: '9876543213',
-    alternatePhone: '9123456783',
-    address: '321, Banjara Hills, Hyderabad, Telangana - 500034',
-    profileImage: null
-  },
-  {
-    id: 5,
-    name: 'Vikram Singh',
-    empId: 'ENG005',
-    phone: '9876543214',
-    alternatePhone: '',
-    address: '654, Connaught Place, New Delhi - 110001',
-    profileImage: null
+
+
+// Mock API functions - replace with your actual API service
+const getAllEngineers = async () => {
+  const token = localStorage.getItem('authToken')
+  if (!token) {
+    throw new Error('No authentication token found')
   }
-]
+  
+  const response = await fetch('http://localhost:5000/api/engineers', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+  
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw { error: 'Session expired. Please login again.' }
+    }
+    throw new Error('Failed to fetch engineers')
+  }
+  
+  return await response.json()
+}
+
+const createEngineer = async (engineerData) => {
+  const token = localStorage.getItem('authToken')
+  if (!token) {
+    throw new Error('No authentication token found')
+  }
+  
+  const formData = new FormData()
+  formData.append('name', engineerData.name)
+  formData.append('phone', engineerData.phone)
+  formData.append('alternatePhone', engineerData.alternatePhone)
+  formData.append('empId', engineerData.empId)
+  formData.append('address', engineerData.address)
+  if (engineerData.profileImage) {
+    formData.append('profileImage', engineerData.profileImage)
+  }
+  
+  const response = await fetch('http://localhost:5000/api/engineers', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  })
+  
+  if (!response.ok) {
+    const error = await response.json()
+    throw error
+  }
+  
+  return await response.json()
+}
+
+const deleteEngineer = async (id) => {
+  const token = localStorage.getItem('authToken')
+  if (!token) {
+    throw new Error('No authentication token found')
+  }
+  
+  const response = await fetch(`http://localhost:5000/api/engineers/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+  
+  if (!response.ok) {
+    const error = await response.json()
+    throw error
+  }
+  
+  return await response.json()
+}
 
 const AddEngineers = () => {
-  const [engineers, setEngineers] = useState(sampleEngineers)
+  const navigate = useNavigate()
+  const [engineers, setEngineers] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedEngineer, setSelectedEngineer] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -73,6 +106,54 @@ const AddEngineers = () => {
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Fetch engineers function
+  const fetchEngineers = async () => {
+    console.log('Fetching engineers...')
+    setIsLoading(true)
+    
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      console.log('No token found, user not logged in')
+      setEngineers([])
+      setIsLoading(false)
+      return
+    }
+    
+    try {
+      const response = await getAllEngineers()
+      console.log('API Response:', response)
+      
+      if (response && response.success && response.engineers) {
+        console.log('Engineers data:', response.engineers)
+        setEngineers(response.engineers)
+      } else {
+        console.log('Response not successful, clearing engineers')
+        setEngineers([])
+      }
+    } catch (error) {
+      console.error('Error fetching engineers:', error)
+      
+      // Only redirect if session expired
+      if (error.error === 'Session expired. Please login again.' || 
+          error.message === 'Session expired. Please login again.' ||
+          error.error === 'Unauthorized' ||
+          error.message === 'Unauthorized') {
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('user')
+        navigate('/login')
+      } else {
+        console.log('Setting empty engineers array due to error')
+        setEngineers([])
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchEngineers()
+  }, [])
+
   // Filter engineers based on search
   const filteredEngineers = engineers.filter(engineer =>
     engineer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -80,27 +161,26 @@ const AddEngineers = () => {
     engineer.phone.includes(searchTerm)
   )
 
- const handleDelete = async (id) => {
-  try {
-    const response = await deleteEngineer(id);
-    if (response.success) {
-      await fetchEngineers();
-      setShowDeleteModal(false);
-      setSelectedEngineer(null);
-      alert('Engineer deleted successfully!');
+  const handleDelete = async (id) => {
+    try {
+      const response = await deleteEngineer(id)
+      if (response.success) {
+        await fetchEngineers()
+        setShowDeleteModal(false)
+        setSelectedEngineer(null)
+        alert('Engineer deleted successfully!')
+      }
+    } catch (error) {
+      console.error('Error deleting engineer:', error)
+      alert(error.error || 'Failed to delete engineer')
     }
-  } catch (error) {
-    console.error('Error deleting engineer:', error);
-    alert(error.error || 'Failed to delete engineer');
   }
-};
 
   const handleEdit = (engineer) => {
     console.log('Edit engineer:', engineer)
     alert(`Edit functionality for ${engineer.name}`)
   }
 
-  // Add Engineer Form Handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -128,21 +208,7 @@ const AddEngineers = () => {
       setErrors(prev => ({ ...prev, image: '' }))
     }
   }
-  const fetchEngineers = async () => {
-  try {
-    const response = await getAllEngineers();
-    if (response.success) {
-      setEngineers(response.engineers);
-    }
-  } catch (error) {
-    console.error('Error fetching engineers:', error);
-    alert(error.error || 'Failed to fetch engineers');
-  }
-};
 
-  useEffect(() => {
-  fetchEngineers();
-}, []);
   const removeImage = () => {
     setProfileImage(null)
     setImagePreview(null)
@@ -178,52 +244,50 @@ const AddEngineers = () => {
   }
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!validateForm()) {
-    return;
-  }
-  
-  setIsSubmitting(true);
-  
-  try {
-    const engineerData = {
-      name: formData.name,
-      phone: formData.phone,
-      alternatePhone: formData.alternatePhone,
-      empId: formData.empId,
-      address: formData.address,
-      profileImage: profileImage // This is the File object
-    };
+    e.preventDefault()
     
-    const response = await createEngineer(engineerData);
-    
-    if (response.success) {
-      // Refresh engineers list
-      await fetchEngineers();
-      
-      // Reset form
-      setFormData({
-        name: '',
-        phone: '',
-        alternatePhone: '',
-        empId: '',
-        address: ''
-      });
-      setProfileImage(null);
-      setImagePreview(null);
-      setErrors({});
-      setShowAddModal(false);
-      
-      alert('Engineer added successfully!');
+    if (!validateForm()) {
+      return
     }
-  } catch (error) {
-    console.error('Error creating engineer:', error);
-    alert(error.error || 'Failed to add engineer');
-  } finally {
-    setIsSubmitting(false);
+    
+    setIsSubmitting(true)
+    
+    try {
+      const engineerData = {
+        name: formData.name,
+        phone: formData.phone,
+        alternatePhone: formData.alternatePhone,
+        empId: formData.empId,
+        address: formData.address,
+        profileImage: profileImage
+      }
+      
+      const response = await createEngineer(engineerData)
+      
+      if (response.success) {
+        await fetchEngineers()
+        
+        setFormData({
+          name: '',
+          phone: '',
+          alternatePhone: '',
+          empId: '',
+          address: ''
+        })
+        setProfileImage(null)
+        setImagePreview(null)
+        setErrors({})
+        setShowAddModal(false)
+        
+        alert('Engineer added successfully!')
+      }
+    } catch (error) {
+      console.error('Error creating engineer:', error)
+      alert(error.error || 'Failed to add engineer')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-};
 
   const closeAddModal = () => {
     setShowAddModal(false)
@@ -242,26 +306,31 @@ const AddEngineers = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="fixed top-0 left-0 right-0 z-50 h-16">
-        <Navbar />
+        <Navbar/>
       </nav>
 
       <aside className="fixed left-0 top-16 bottom-0 w-16 md:w-64 z-40 overflow-y-auto">
         <SidePannel />
       </aside>
 
-      <div className="pt-20 pl-16 md:pl-64 pr-4 pb-8 min-h-screen">
+      <div className="pt-25 pl-16 md:pl-64 pr-4 pb-8 min-h-screen">
         <div className="max-w-7xl mx-auto">
           {/* Header Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Engineers List</h2>
-                <p className="text-gray-600 mt-1">Total Engineers: {filteredEngineers.length}</p>
+                <p className="text-gray-600 mt-1">
+                  {isLoading ? 'Loading...' : `Total Engineers: ${filteredEngineers.length}`}
+                </p>
               </div>
               
               <button 
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#FFbe2a] text-black rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 text-black rounded-lg transition-colors"
+                style={{ backgroundColor: '#ffbe2a' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#e6ab25'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#ffbe2a'}
               >
                 <User className="w-4 h-4" />
                 Add Engineer
@@ -285,161 +354,177 @@ const AddEngineers = () => {
             </div>
           </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden lg:block bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Engineer
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Employee ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Address
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredEngineers.map((engineer) => (
-                    <tr key={engineer.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            {engineer.profileImage ? (
-                              <img src={engineer.profileImage} alt={engineer.name} className="h-10 w-10 rounded-full object-cover" />
-                            ) : (
-                              <span className="text-blue-600 font-semibold">
-                                {engineer.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{engineer.name}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{engineer.empId}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{engineer.phone}</div>
-                        {engineer.alternatePhone && (
-                          <div className="text-sm text-gray-500">{engineer.alternatePhone}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs truncate">{engineer.address}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleEdit(engineer)}
-                            className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition-colors"
-                            title="Edit"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedEngineer(engineer)
-                              setShowDeleteModal(true)
-                            }}
-                            className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Loading State */}
+          {isLoading && (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading engineers...</p>
             </div>
+          )}
 
-            {filteredEngineers.length === 0 && (
-              <div className="text-center py-12">
-                <User className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No engineers found</h3>
-                <p className="mt-1 text-sm text-gray-500">Try adjusting your search terms.</p>
+          {/* Desktop Table View */}
+          {!isLoading && (
+            <div className="hidden lg:block bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Engineer
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Employee ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Address
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredEngineers.map((engineer) => (
+                      <tr key={engineer.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                              {engineer.profileImage ? (
+                                <img src={engineer.profileImage} alt={engineer.name} className="h-10 w-10 rounded-full object-cover" />
+                              ) : (
+                                <span className="text-blue-600 font-semibold">
+                                  {engineer.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{engineer.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{engineer.empId}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">{engineer.phone}</div>
+                          {engineer.alternatePhone && (
+                            <div className="text-sm text-gray-500">{engineer.alternatePhone}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900 max-w-xs truncate">{engineer.address}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleEdit(engineer)}
+                              className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition-colors"
+                              title="Edit"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedEngineer(engineer)
+                                setShowDeleteModal(true)
+                              }}
+                              className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </div>
+
+              {filteredEngineers.length === 0 && (
+                <div className="text-center py-12">
+                  <User className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No engineers found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {searchTerm ? 'Try adjusting your search terms.' : 'Get started by adding a new engineer.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Mobile/Tablet Card View */}
-          <div className="lg:hidden space-y-4">
-            {filteredEngineers.map((engineer) => (
-              <div key={engineer.id} className="bg-white rounded-lg shadow-md p-4">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center">
-                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                      {engineer.profileImage ? (
-                        <img src={engineer.profileImage} alt={engineer.name} className="h-12 w-12 rounded-full object-cover" />
-                      ) : (
-                        <span className="text-blue-600 font-semibold text-lg">
-                          {engineer.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </span>
-                      )}
+          {!isLoading && (
+            <div className="lg:hidden space-y-4">
+              {filteredEngineers.map((engineer) => (
+                <div key={engineer.id} className="bg-white rounded-lg shadow-md p-4">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center">
+                      <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                        {engineer.profileImage ? (
+                          <img src={engineer.profileImage} alt={engineer.name} className="h-12 w-12 rounded-full object-cover" />
+                        ) : (
+                          <span className="text-blue-600 font-semibold text-lg">
+                            {engineer.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-lg font-semibold text-gray-900">{engineer.name}</h3>
+                        <p className="text-sm text-gray-500">{engineer.empId}</p>
+                      </div>
                     </div>
-                    <div className="ml-3">
-                      <h3 className="text-lg font-semibold text-gray-900">{engineer.name}</h3>
-                      <p className="text-sm text-gray-500">{engineer.empId}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(engineer)}
+                        className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition-colors"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedEngineer(engineer)
+                          setShowDeleteModal(true)
+                        }}
+                        className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(engineer)}
-                      className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition-colors"
-                    >
-                      <Edit className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedEngineer(engineer)
-                        setShowDeleteModal(true)
-                      }}
-                      className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+
+                  <div className="space-y-2">
+                    <div className="flex items-start">
+                      <Phone className="w-4 h-4 text-gray-400 mt-1 mr-2 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm text-gray-900">{engineer.phone}</p>
+                        {engineer.alternatePhone && (
+                          <p className="text-sm text-gray-500">{engineer.alternatePhone}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-1 mr-2 flex-shrink-0" />
+                      <p className="text-sm text-gray-600">{engineer.address}</p>
+                    </div>
                   </div>
                 </div>
+              ))}
 
-                <div className="space-y-2">
-                  <div className="flex items-start">
-                    <Phone className="w-4 h-4 text-gray-400 mt-1 mr-2 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-gray-900">{engineer.phone}</p>
-                      {engineer.alternatePhone && (
-                        <p className="text-sm text-gray-500">{engineer.alternatePhone}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <MapPin className="w-4 h-4 text-gray-400 mt-1 mr-2 flex-shrink-0" />
-                    <p className="text-sm text-gray-600">{engineer.address}</p>
-                  </div>
+              {filteredEngineers.length === 0 && (
+                <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                  <User className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No engineers found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {searchTerm ? 'Try adjusting your search terms.' : 'Get started by adding a new engineer.'}
+                  </p>
                 </div>
-              </div>
-            ))}
-
-            {filteredEngineers.length === 0 && (
-              <div className="bg-white rounded-lg shadow-md p-12 text-center">
-                <User className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No engineers found</h3>
-                <p className="mt-1 text-sm text-gray-500">Try adjusting your search terms.</p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

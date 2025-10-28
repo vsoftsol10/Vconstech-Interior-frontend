@@ -27,7 +27,7 @@ const isTokenExpired = () => {
 const handleAuthError = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
-  window.location.href = '/login';
+  window.location.href = '/';
 };
 
 // Create axios instance
@@ -94,44 +94,58 @@ export const getEngineerById = async (id) => {
   }
 };
 
-// Create new engineer
+// Create engineer - FIXED VERSION
 export const createEngineer = async (engineerData) => {
   try {
-    // Check token before creating FormData
+    // Check token expiry first
     if (isTokenExpired()) {
       handleAuthError();
       throw { error: 'Session expired. Please login again.' };
     }
 
-    const formData = new FormData();
+    const token = getAuthToken();
     
+    const formData = new FormData();
     formData.append('name', engineerData.name);
     formData.append('phone', engineerData.phone);
+    formData.append('alternatePhone', engineerData.alternatePhone || '');
     formData.append('empId', engineerData.empId);
     formData.append('address', engineerData.address);
-    
-    if (engineerData.alternatePhone) {
-      formData.append('alternatePhone', engineerData.alternatePhone);
-    }
     
     if (engineerData.profileImage) {
       formData.append('profileImage', engineerData.profileImage);
     }
-
-    const response = await axios.post(`${API_URL}/engineers`, formData, {
+    
+    // Use the full API_URL instead of relative path
+    const response = await fetch(`${API_URL}/engineers`, {
+      method: 'POST',
       headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${getAuthToken()}`,
+        'Authorization': `Bearer ${token}`
+        // Don't set Content-Type - let browser set it with boundary
       },
+      body: formData
     });
     
-    return response.data;
-  } catch (error) {
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      handleAuthError();
-      throw { error: 'Session expired. Please login again.' };
+    // Check if response is ok
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        throw { error: 'Session expired. Please login again.' };
+      }
+      
+      // Try to parse error response
+      const errorData = await response.json().catch(() => ({ error: 'Failed to create engineer' }));
+      throw errorData;
     }
-    throw error.response?.data || error || { error: 'Failed to create engineer' };
+    
+    return await response.json();
+  } catch (error) {
+    // If it's already our formatted error, just throw it
+    if (error.error) {
+      throw error;
+    }
+    // Otherwise format it
+    throw { error: error.message || 'Failed to create engineer' };
   }
 };
 
