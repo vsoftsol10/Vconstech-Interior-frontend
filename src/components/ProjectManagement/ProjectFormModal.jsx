@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Upload } from 'lucide-react';
 import { projectAPI } from '../../api/projectAPI';
 
 // Project Form Modal Component
@@ -7,15 +7,25 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
 
   // Load employees when modal opens
   useEffect(() => {
     if (isOpen) {
       loadEmployees();
+      // Set existing file preview if editing
+      if (project.designFile) {
+        setFilePreview(project.designFile);
+      }
+    } else {
+      // Reset file state when modal closes
+      setSelectedFile(null);
+      setFilePreview(null);
     }
-  }, [isOpen]);
+  }, [isOpen, project.designFile]);
 
-const loadEmployees = async () => {
+  const loadEmployees = async () => {
     try {
       const data = await projectAPI.getEmployees();
       setEmployees(data.employees || []);
@@ -41,12 +51,44 @@ const loadEmployees = async () => {
     setLoading(true);
     setError(null);
     try {
-      await onSubmit();
+      // Pass the selected file to the parent component
+      await onSubmit(selectedFile);
     } catch (err) {
       setError(err.error || 'Failed to save project');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type (3D design files)
+      const validTypes = ['.dwg', '.dxf', '.skp', '.obj', '.fbx', '.3ds', '.stl', '.rvt', '.ifc'];
+      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+      
+      if (!validTypes.includes(fileExtension)) {
+        setError('Invalid file type. Please upload a 3D design file (.dwg, .dxf, .skp, .obj, .fbx, .3ds, .stl, .rvt, .ifc)');
+        return;
+      }
+
+      // Validate file size (e.g., max 50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        setError('File size too large. Maximum size is 50MB');
+        return;
+      }
+
+      setSelectedFile(file);
+      setFilePreview(file.name);
+      setError(null);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    // Also notify parent to clear the file
+    onChange({...project, designFile: null});
   };
 
   if (!isOpen) return null;
@@ -117,7 +159,6 @@ const loadEmployees = async () => {
               >
                 <option>Residential</option>
                 <option>Commercial</option>
-                <option>Office</option>
                 <option>Renovation</option>
               </select>
             </div>
@@ -173,6 +214,18 @@ const loadEmployees = async () => {
             </div>
 
             <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Project Location *</label>
+              <input 
+                type="text" 
+                value={project.location || ''}
+                onChange={(e) => onChange({...project, location: e.target.value})}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                placeholder="Enter project location/address"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Assign Site Engineer {!project.id && '*'}
               </label>
@@ -192,6 +245,45 @@ const loadEmployees = async () => {
               {employees.length === 0 && (
                 <p className="text-xs text-gray-500 mt-1">No site engineers available</p>
               )}
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload 3D Design File
+              </label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
+                {!filePreview ? (
+                  <label className="cursor-pointer block">
+                    <input 
+                      type="file" 
+                      className="hidden"
+                      onChange={handleFileChange}
+                      accept=".dwg,.dxf,.skp,.obj,.fbx,.3ds,.stl,.rvt,.ifc"
+                      disabled={loading}
+                    />
+                    <div className="flex flex-col items-center justify-center py-2">
+                      <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600 mb-1">Click to upload 3D design file</p>
+                      <p className="text-xs text-gray-500">Supported: DWG, DXF, SKP, OBJ, FBX, 3DS, STL, RVT, IFC (Max 50MB)</p>
+                    </div>
+                  </label>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Upload className="w-5 h-5 text-blue-500" />
+                      <span className="text-sm text-gray-700 truncate max-w-xs">{filePreview}</span>
+                    </div>
+                    <button
+                      onClick={handleRemoveFile}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium"
+                      disabled={loading}
+                      type="button"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="sm:col-span-2">
