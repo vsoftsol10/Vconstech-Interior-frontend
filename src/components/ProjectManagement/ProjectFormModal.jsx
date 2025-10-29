@@ -15,13 +15,25 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
     }
   }, [isOpen]);
 
-  const loadEmployees = async () => {
+const loadEmployees = async () => {
     try {
       const data = await projectAPI.getEmployees();
       setEmployees(data.employees || []);
     } catch (err) {
       console.error('Failed to load employees:', err);
-      setError('Failed to load employees');
+      
+      // Check if it's an auth error
+      if (err.error === 'Invalid or expired token' || err.status === 403) {
+        setError('Session expired. Please log in again.');
+        // Clear invalid token
+        localStorage.removeItem('authToken');
+        // Redirect to login after a short delay
+        setTimeout(() => {
+          window.location.href = '/project'; // Adjust path as needed
+        }, 2000);
+      } else {
+        setError('Failed to load employees');
+      }
     }
   };
 

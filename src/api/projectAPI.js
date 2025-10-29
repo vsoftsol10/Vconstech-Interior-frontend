@@ -11,10 +11,32 @@ const api = axios.create({
   }
 });
 
-// Add token to requests automatically
+// Add this after your request interceptor in projectAPI.js
+
+// Handle auth errors globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Check for authentication errors
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Clear invalid token
+      localStorage.removeItem('authToken');
+      
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        alert('Your session has expired. Please log in again.');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// In projectAPI.js, modify the request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
+    console.log('Token exists:', !!token); // Debug log
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,6 +44,8 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
+
 
 // Project API functions
 export const projectAPI = {
@@ -97,14 +121,15 @@ export const projectAPI = {
   },
 
   // Get employees for dropdown (Site Engineers)
-  getEmployees: async () => {
-    try {
-      const response = await api.get('/employees');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+
+getEmployees: async () => {
+  try {
+    const response = await api.get('/users/employees');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
   }
+}
 };
 
 export default projectAPI;

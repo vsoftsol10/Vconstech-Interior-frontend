@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Search, Edit, Trash2, Phone, MapPin, User, X, Camera, Briefcase } from 'lucide-react'
 import Navbar from '../../components/common/Navbar'
 import SidePannel from '../../components/common/SidePannel'
+import { createEngineer, getAllEngineers, deleteEngineer } from '../../api/engineerService';
 
 // Sample data - replace with your actual API data
 const sampleEngineers = [
@@ -79,11 +80,20 @@ const AddEngineers = () => {
     engineer.phone.includes(searchTerm)
   )
 
-  const handleDelete = (id) => {
-    setEngineers(engineers.filter(eng => eng.id !== id))
-    setShowDeleteModal(false)
-    setSelectedEngineer(null)
+ const handleDelete = async (id) => {
+  try {
+    const response = await deleteEngineer(id);
+    if (response.success) {
+      await fetchEngineers();
+      setShowDeleteModal(false);
+      setSelectedEngineer(null);
+      alert('Engineer deleted successfully!');
+    }
+  } catch (error) {
+    console.error('Error deleting engineer:', error);
+    alert(error.error || 'Failed to delete engineer');
   }
+};
 
   const handleEdit = (engineer) => {
     console.log('Edit engineer:', engineer)
@@ -118,7 +128,21 @@ const AddEngineers = () => {
       setErrors(prev => ({ ...prev, image: '' }))
     }
   }
+  const fetchEngineers = async () => {
+  try {
+    const response = await getAllEngineers();
+    if (response.success) {
+      setEngineers(response.engineers);
+    }
+  } catch (error) {
+    console.error('Error fetching engineers:', error);
+    alert(error.error || 'Failed to fetch engineers');
+  }
+};
 
+  useEffect(() => {
+  fetchEngineers();
+}, []);
   const removeImage = () => {
     setProfileImage(null)
     setImagePreview(null)
@@ -153,27 +177,30 @@ const AddEngineers = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validateForm()) {
+    return;
+  }
+  
+  setIsSubmitting(true);
+  
+  try {
+    const engineerData = {
+      name: formData.name,
+      phone: formData.phone,
+      alternatePhone: formData.alternatePhone,
+      empId: formData.empId,
+      address: formData.address,
+      profileImage: profileImage // This is the File object
+    };
     
-    if (!validateForm()) {
-      return
-    }
+    const response = await createEngineer(engineerData);
     
-    setIsSubmitting(true)
-    
-    setTimeout(() => {
-      const newEngineer = {
-        id: engineers.length + 1,
-        name: formData.name,
-        empId: formData.empId,
-        phone: formData.phone,
-        alternatePhone: formData.alternatePhone,
-        address: formData.address,
-        profileImage: imagePreview
-      }
-      
-      setEngineers([...engineers, newEngineer])
+    if (response.success) {
+      // Refresh engineers list
+      await fetchEngineers();
       
       // Reset form
       setFormData({
@@ -182,14 +209,21 @@ const AddEngineers = () => {
         alternatePhone: '',
         empId: '',
         address: ''
-      })
-      setProfileImage(null)
-      setImagePreview(null)
-      setErrors({})
-      setIsSubmitting(false)
-      setShowAddModal(false)
-    }, 1000)
+      });
+      setProfileImage(null);
+      setImagePreview(null);
+      setErrors({});
+      setShowAddModal(false);
+      
+      alert('Engineer added successfully!');
+    }
+  } catch (error) {
+    console.error('Error creating engineer:', error);
+    alert(error.error || 'Failed to add engineer');
+  } finally {
+    setIsSubmitting(false);
   }
+};
 
   const closeAddModal = () => {
     setShowAddModal(false)
