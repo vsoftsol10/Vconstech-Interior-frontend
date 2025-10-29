@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import { Search, Edit, Trash2, Phone, MapPin, User, X, Camera, Briefcase } from 'lucide-react'
+import { Search, Edit, Trash2, Phone, MapPin, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/common/Navbar'
 import SidePannel from '../../components/common/SidePannel'
+import DeleteConfirmationModal from '../../components/AddSiteEngineer/DeleteConfirmationModal'
+import AddEngineerModal from '../../components/AddSiteEngineer/AddEngineerModal'
+import EditEngineerModal from '../../components/AddSiteEngineer/EditEngineerModal'
 
 
-
-// Mock API functions - replace with your actual API service
+// API functions
 const getAllEngineers = async () => {
   const token = localStorage.getItem('authToken')
   if (!token) {
@@ -62,6 +64,38 @@ const createEngineer = async (engineerData) => {
   return await response.json()
 }
 
+const updateEngineer = async (id, engineerData) => {
+  const token = localStorage.getItem('authToken')
+  if (!token) {
+    throw new Error('No authentication token found')
+  }
+  
+  const formData = new FormData()
+  formData.append('name', engineerData.name)
+  formData.append('phone', engineerData.phone)
+  formData.append('alternatePhone', engineerData.alternatePhone)
+  formData.append('empId', engineerData.empId)
+  formData.append('address', engineerData.address)
+  if (engineerData.profileImage) {
+    formData.append('profileImage', engineerData.profileImage)
+  }
+  
+  const response = await fetch(`http://localhost:5000/api/engineers/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  })
+  
+  if (!response.ok) {
+    const error = await response.json()
+    throw error
+  }
+  
+  return await response.json()
+}
+
 const deleteEngineer = async (id) => {
   const token = localStorage.getItem('authToken')
   if (!token) {
@@ -92,18 +126,7 @@ const AddEngineers = () => {
   const [selectedEngineer, setSelectedEngineer] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
-  
-  // Add Engineer Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    alternatePhone: '',
-    empId: '',
-    address: ''
-  })
-  const [profileImage, setProfileImage] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
-  const [errors, setErrors] = useState({})
+  const [showEditModal, setShowEditModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Fetch engineers function
@@ -177,130 +200,53 @@ const AddEngineers = () => {
   }
 
   const handleEdit = (engineer) => {
-    console.log('Edit engineer:', engineer)
-    alert(`Edit functionality for ${engineer.name}`)
+    setSelectedEngineer(engineer)
+    setShowEditModal(true)
   }
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
-    }
-  }
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, image: 'Image size should be less than 5MB' }))
-        return
-      }
-      setProfileImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result)
-      }
-      reader.readAsDataURL(file)
-      setErrors(prev => ({ ...prev, image: '' }))
-    }
-  }
-
-  const removeImage = () => {
-    setProfileImage(null)
-    setImagePreview(null)
-  }
-
-  const validateForm = () => {
-    const newErrors = {}
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-    
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required'
-    } else if (!/^\d{10}$/.test(formData.phone.trim())) {
-      newErrors.phone = 'Please enter a valid 10-digit phone number'
-    }
-    
-    if (formData.alternatePhone.trim() && !/^\d{10}$/.test(formData.alternatePhone.trim())) {
-      newErrors.alternatePhone = 'Please enter a valid 10-digit phone number'
-    }
-    
-    if (!formData.empId.trim()) {
-      newErrors.empId = 'Employee ID is required'
-    }
-    
-    if (!formData.address.trim()) {
-      newErrors.address = 'Address is required'
-    }
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
-    
+  const handleAddEngineer = async (engineerData) => {
     setIsSubmitting(true)
     
     try {
-      const engineerData = {
-        name: formData.name,
-        phone: formData.phone,
-        alternatePhone: formData.alternatePhone,
-        empId: formData.empId,
-        address: formData.address,
-        profileImage: profileImage
-      }
-      
       const response = await createEngineer(engineerData)
       
       if (response.success) {
         await fetchEngineers()
-        
-        setFormData({
-          name: '',
-          phone: '',
-          alternatePhone: '',
-          empId: '',
-          address: ''
-        })
-        setProfileImage(null)
-        setImagePreview(null)
-        setErrors({})
         setShowAddModal(false)
-        
         alert('Engineer added successfully!')
+        return true
       }
+      return false
     } catch (error) {
       console.error('Error creating engineer:', error)
       alert(error.error || 'Failed to add engineer')
+      return false
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const closeAddModal = () => {
-    setShowAddModal(false)
-    setFormData({
-      name: '',
-      phone: '',
-      alternatePhone: '',
-      empId: '',
-      address: ''
-    })
-    setProfileImage(null)
-    setImagePreview(null)
-    setErrors({})
+  const handleUpdateEngineer = async (id, engineerData) => {
+    setIsSubmitting(true)
+    
+    try {
+      const response = await updateEngineer(id, engineerData)
+      
+      if (response.success) {
+        await fetchEngineers()
+        setShowEditModal(false)
+        setSelectedEngineer(null)
+        alert('Engineer updated successfully!')
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Error updating engineer:', error)
+      alert(error.error || 'Failed to update engineer')
+      return false
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -529,217 +475,35 @@ const AddEngineers = () => {
       </div>
 
       {/* Add Engineer Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full my-8">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h3 className="text-2xl font-bold text-gray-900">Add New Engineer</h3>
-              <button
-                onClick={closeAddModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+      <AddEngineerModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleAddEngineer}
+        isSubmitting={isSubmitting}
+      />
 
-            <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-              <div className="space-y-6">
-                {/* Profile Picture Section */}
-                <div className="flex flex-col items-center">
-                  <div className="relative">
-                    <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-4 border-gray-200">
-                      {imagePreview ? (
-                        <img src={imagePreview} alt="Profile preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <User className="w-16 h-16 text-gray-400" />
-                      )}
-                    </div>
-                    
-                    {imagePreview && (
-                      <button
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                    
-                    <label className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 cursor-pointer hover:bg-blue-700 transition-colors">
-                      <Camera className="w-5 h-5" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">Upload profile picture (Max 5MB)</p>
-                  {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
-                </div>
-
-                {/* Form Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Name */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className={`block w-full pl-10 pr-3 py-2 border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                        placeholder="Enter full name"
-                      />
-                    </div>
-                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                  </div>
-
-                  {/* Phone */}
-                  <div>    
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Phone className="h-5 w-5 text-gray-400" />          
-                      </div>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className={`block w-full pl-10 pr-3 py-2 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                        placeholder="10-digit number"
-                        maxLength="10"
-                      />
-                    </div>
-                    {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-                  </div>
-
-                  {/* Alternate Phone */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Alternate Phone Number
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Phone className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="tel"
-                        name="alternatePhone"
-                        value={formData.alternatePhone}
-                        onChange={handleInputChange}
-                        className={`block w-full pl-10 pr-3 py-2 border ${errors.alternatePhone ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                        placeholder="10-digit number (optional)"
-                        maxLength="10"
-                      />
-                    </div>
-                    {errors.alternatePhone && <p className="text-red-500 text-sm mt-1">{errors.alternatePhone}</p>}
-                  </div>
-
-                  {/* Employee ID */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Employee ID <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Briefcase className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        name="empId"
-                        value={formData.empId}
-                        onChange={handleInputChange}
-                        className={`block w-full pl-10 pr-3 py-2 border ${errors.empId ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                        placeholder="Enter employee ID"
-                      />
-                    </div>
-                    {errors.empId && <p className="text-red-500 text-sm mt-1">{errors.empId}</p>}
-                  </div>
-
-                  {/* Address */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Address <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute top-3 left-3 pointer-events-none">
-                        <MapPin className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <textarea
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        rows="4"
-                        className={`block w-full pl-10 pr-3 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                        placeholder="Enter complete address"
-                      />
-                    </div>
-                    {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 p-6 border-t">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSubmitting ? 'Adding Engineer...' : 'Add Engineer'}
-              </button>
-              <button
-                type="button"
-                onClick={closeAddModal}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Edit Engineer Modal */}
+      <EditEngineerModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false)
+          setSelectedEngineer(null)
+        }}
+        onSubmit={handleUpdateEngineer}
+        isSubmitting={isSubmitting}
+        engineer={selectedEngineer}
+      />
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedEngineer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Engineer</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete <strong>{selectedEngineer.name}</strong>? This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => handleDelete(selectedEngineer.id)}
-                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false)
-                  setSelectedEngineer(null)
-                }}
-                className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        engineer={selectedEngineer}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setShowDeleteModal(false)
+          setSelectedEngineer(null)
+        }}
+      />
     </div>
   )
 }

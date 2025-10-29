@@ -1,135 +1,165 @@
+// src/api/projectAPI.js
+const API_BASE_URL = import.meta.env.VITE_API_URL|| 'http://localhost:5000/api';
 
-import axios from 'axios';
+// Helper function to get auth token
+const getAuthToken = () => {
+  return localStorage.getItem('authToken');
+};
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-// Create axios instance with auth token
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
+// Helper function to handle API responses
+const handleResponse = async (response) => {
+  const data = await response.json();
+  
+  if (!response.ok) {
+    
+    throw {
+      status: response.status,
+      error: data.error || 'An error occurred',
+      details: data.details
+    };
   }
-});
+  
+  return data;
+};
 
-// Add this after your request interceptor in projectAPI.js
-
-// Handle auth errors globally
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Check for authentication errors
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      // Clear invalid token
-      localStorage.removeItem('authToken');
-      
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/login')) {
-        alert('Your session has expired. Please log in again.');
-        window.location.href = '/';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
-// In projectAPI.js, modify the request interceptor
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    console.log('Token exists:', !!token); // Debug log
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-
-
-// Project API functions
 export const projectAPI = {
-  // Create new project
-  createProject: async (projectData) => {
-    try {
-      const response = await api.post('/projects', {
-        projectId: projectData.projectId,
-        name: projectData.name,
-        clientName: projectData.client,
-        projectType: projectData.type,
-        budget: projectData.budget,
-        description: projectData.description,
-        startDate: projectData.startDate,
-        endDate: projectData.endDate,
-        assignedUserId: projectData.assignedEmployee
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
   // Get all projects
-  getAllProjects: async (filters = {}) => {
-    try {
-      const params = new URLSearchParams(filters).toString();
-      const response = await api.get(`/projects?${params}`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+  getProjects: async (filters = {}) => {
+    const token = getAuthToken();
+    const queryParams = new URLSearchParams();
+    
+    if (filters.status) queryParams.append('status', filters.status);
+    if (filters.projectType) queryParams.append('projectType', filters.projectType);
+    
+    const url = `${API_BASE_URL}/projects${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    return handleResponse(response);
   },
 
   // Get single project
-  getProject: async (id) => {
-    try {
-      const response = await api.get(`/projects/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
+  getProjectById: async (id) => {
+    const token = getAuthToken();
+    
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    return handleResponse(response);
+  },
+
+  // Create new project
+  createProject: async (projectData, file = null) => {
+    const token = getAuthToken();
+    
+    // Prepare the request body
+    const body = {
+      projectId: projectData.projectId,
+      name: projectData.name,
+      clientName: projectData.client,
+      projectType: projectData.type,
+      budget: projectData.budget || null,
+      description: projectData.description || null,
+      startDate: projectData.startDate || null,
+      endDate: projectData.endDate || null,
+      location: projectData.location || null,
+      assignedUserId: projectData.assignedEmployee || null
+    };
+    
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    
+    const result = await handleResponse(response);
+    
+    // TODO: If file exists, upload it separately
+    // This would require a separate file upload endpoint
+    if (file && result.project) {
+      console.log('File upload will be implemented with file endpoint');
     }
+    
+    return result;
   },
 
   // Update project
-  updateProject: async (id, projectData) => {
-    try {
-      const response = await api.put(`/projects/${id}`, {
-        name: projectData.name,
-        clientName: projectData.client,
-        projectType: projectData.type,
-        budget: projectData.budget,
-        description: projectData.description,
-        startDate: projectData.startDate,
-        endDate: projectData.endDate,
-        status: projectData.status,
-        assignedUserId: projectData.assignedEmployee
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
+  updateProject: async (id, projectData, file = null) => {
+    const token = getAuthToken();
+    
+    const body = {
+      name: projectData.name,
+      clientName: projectData.client,
+      projectType: projectData.type,
+      budget: projectData.budget || null,
+      description: projectData.description || null,
+      startDate: projectData.startDate || null,
+      endDate: projectData.endDate || null,
+      location: projectData.location || null,
+      status: projectData.status || null,
+      assignedUserId: projectData.assignedEmployee || null
+    };
+    
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    
+    const result = await handleResponse(response);
+    
+    // TODO: If file exists, upload it separately
+    if (file && result.project) {
+      console.log('File upload will be implemented with file endpoint');
     }
+    
+    return result;
   },
 
   // Delete project
   deleteProject: async (id) => {
-    try {
-      const response = await api.delete(`/projects/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
+    const token = getAuthToken();
+    
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    return handleResponse(response);
   },
 
-  // Get employees for dropdown (Site Engineers)
-
-getEmployees: async () => {
-  try {
-    const response = await api.get('/users/employees');
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
+  // Get employees (Site Engineers)
+  getEmployees: async () => {
+    const token = getAuthToken();
+    
+    const response = await fetch(`${API_BASE_URL}/employees`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    return handleResponse(response);
   }
-}
 };
-
-export default projectAPI;

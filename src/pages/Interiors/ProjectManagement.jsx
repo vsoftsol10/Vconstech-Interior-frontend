@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Plus, Search, Filter,  IndianRupee, FileText,  CheckCircle, Clock, AlertCircle, Menu } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Filter, IndianRupee, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import Navbar from '../../components/common/Navbar';
 import SidePannel from '../../components/common/SidePannel';
 import StatsCard from '../../components/ProjectManagement/StatsCard';
 import ProjectCard from '../../components/ProjectManagement/ProjectCard';
 import ProjectFormModal from '../../components/ProjectManagement/ProjectFormModal';
 import ProjectDetailsModal from '../../components/ProjectManagement/ProjectDetailsModal';
+import { projectAPI } from '../../api/projectAPI';
 
-// Main Project Management Component
 const ProjectManagement = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
@@ -17,69 +17,9 @@ const ProjectManagement = () => {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [editingProject, setEditingProject] = useState(null);
-  
-  const [projects, setProjects] = useState([
-    {
-      id: 'PRJ001',
-      name: 'Modern Villa Renovation',
-      client: 'John Smith',
-      type: 'Residential',
-      status: 'In Progress',
-      progress: 65,
-      budget: 150000,
-      spent: 97500,
-      startDate: '2024-09-01',
-      endDate: '2024-12-15',
-      team: ['Alice', 'Bob', 'Charlie'],
-      tasks: { total: 45, completed: 29 },
-      description: 'Complete renovation of a modern villa including interior design and landscaping.'
-    },
-    {
-      id: 'PRJ002',
-      name: 'Corporate Office Interior',
-      client: 'Tech Corp Ltd',
-      type: 'Office',
-      status: 'Planning',
-      progress: 25,
-      budget: 250000,
-      spent: 62500,
-      startDate: '2024-10-01',
-      endDate: '2025-02-28',
-      team: ['David', 'Emma'],
-      tasks: { total: 60, completed: 15 },
-      description: 'Modern office interior design with open workspace concept.'
-    },
-    {
-      id: 'PRJ003',
-      name: 'Retail Store Design',
-      client: 'Fashion Hub',
-      type: 'Commercial',
-      status: 'Completed',
-      progress: 100,
-      budget: 80000,
-      spent: 78000,
-      startDate: '2024-07-01',
-      endDate: '2024-09-30',
-      team: ['Frank', 'Grace'],
-      tasks: { total: 35, completed: 35 },
-      description: 'Luxury retail store interior with premium finishes.'
-    },
-    {
-      id: 'PRJ004',
-      name: 'Luxury Apartment',
-      client: 'Sarah Johnson',
-      type: 'Residential',
-      status: 'In Progress',
-      progress: 80,
-      budget: 120000,
-      spent: 96000,
-      startDate: '2024-08-15',
-      endDate: '2024-11-30',
-      team: ['Henry', 'Iris'],
-      tasks: { total: 40, completed: 32 },
-      description: 'High-end apartment interior with custom furniture.'
-    }
-  ]);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [newProject, setNewProject] = useState({
     name: '',
@@ -89,8 +29,108 @@ const ProjectManagement = () => {
     budget: '',
     startDate: '',
     endDate: '',
+    location: '',
+    assignedEmployee: '',
     description: ''
   });
+
+  // Load projects on component mount
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await projectAPI.getProjects();
+      
+      // Transform backend data to match frontend format
+      const transformedProjects = data.projects.map(project => ({
+        id: project.projectId,
+        dbId: project.id,
+        name: project.name,
+        client: project.clientName,
+        type: project.projectType,
+        status: transformStatus(project.status),
+        progress: calculateProgress(project),
+        budget: project.budget || 0,
+        spent: calculateSpent(project),
+        startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
+        endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
+        location: project.location || '',
+        team: project.assignments?.map(a => a.user.name) || [],
+        assignedEmployee: project.assignments?.[0]?.userId?.toString() || '',
+        tasks: { 
+          total: project._count?.materialUsed || 0, 
+          completed: 0 
+        },
+        description: project.description || ''
+      }));
+      
+      setProjects(transformedProjects);
+    } catch (err) {
+      console.error('Failed to load projects:', err);
+      setError(err.error || 'Failed to load projects');
+      
+      // Handle auth errors
+      if (err.status === 403 || err.error === 'Invalid or expired token') {
+        localStorage.removeItem('authToken');
+        window.location.href = '/login';
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Transform backend status to frontend format
+  const transformStatus = (status) => {
+    const statusMap = {
+      'PENDING': 'Planning',
+      'ONGOING': 'In Progress',
+      'COMPLETED': 'Completed'
+    };
+    return statusMap[status] || status;
+  };
+
+  // Transform frontend status to backend format
+  const transformStatusToBackend = (status) => {
+    const statusMap = {
+      'Planning': 'PENDING',
+      'In Progress': 'ONGOING',
+      'Completed': 'COMPLETED'
+    };
+    return statusMap[status] || 'PENDING';
+  };
+
+  const calculateProgress = (project) => {
+    if (project.status === 'COMPLETED') return 100;
+    if (project.status === 'PENDING') return 0;
+    
+    // Calculate based on date progress
+    if (project.startDate && project.endDate) {
+      const start = new Date(project.startDate);
+      const end = new Date(project.endDate);
+      const now = new Date();
+      
+      if (now < start) return 0;
+      if (now > end) return 100;
+      
+      const total = end - start;
+      const elapsed = now - start;
+      return Math.round((elapsed / total) * 100);
+    }
+    
+    return 50; // Default for in-progress projects
+  };
+
+  const calculateSpent = (project) => {
+    // This would come from finance records in a real implementation
+    if (project.status === 'COMPLETED') {
+      return project.budget || 0;
+    }
+    return Math.round((project.budget || 0) * 0.6); // 60% spent for ongoing
+  };
 
   const stats = {
     total: projects.length,
@@ -127,67 +167,105 @@ const ProjectManagement = () => {
     return matchesSearch && matchesTab && matchesFilter;
   });
 
-  const handleCreateProject = () => {
-    if (!newProject.name || !newProject.projectId || !newProject.client) {
-      alert('Please fill in all required fields (Name, ID, and Client)');
-      return;
+  const handleCreateProject = async (file) => {
+    if (!newProject.name || !newProject.projectId || !newProject.client || !newProject.location || !newProject.assignedEmployee) {
+      throw new Error('Please fill in all required fields (Name, ID, Client, Location, and Site Engineer)');
     }
 
-    const project = {
-      ...newProject,
-      id: newProject.projectId,
-      budget: parseFloat(newProject.budget) || 0,
-      spent: 0,
-      status: 'Planning',
-      progress: 0,
-      team: [],
-      tasks: { total: 0, completed: 0 }
-    };
-
-    setProjects([...projects, project]);
-    setShowNewProjectModal(false);
-    setNewProject({
-      name: '',
-      projectId: '',
-      client: '',
-      type: 'Residential',
-      budget: '',
-      startDate: '',
-      endDate: '',
-      description: ''
-    });
-    alert('Project created successfully!');
+    try {
+      const result = await projectAPI.createProject(newProject, file);
+      
+      // Reload projects to get the latest data
+      await loadProjects();
+      
+      setShowNewProjectModal(false);
+      setNewProject({
+        name: '',
+        projectId: '',
+        client: '',
+        type: 'Residential',
+        budget: '',
+        startDate: '',
+        endDate: '',
+        location: '',
+        assignedEmployee: '',
+        description: ''
+      });
+      
+      alert('Project created successfully!');
+    } catch (err) {
+      throw err;
+    }
   };
 
   const handleEditProject = (project) => {
-    setEditingProject({ ...project });
+    // Transform project data for editing
+    const editData = {
+      ...project,
+      client: project.client,
+      status: transformStatusToBackend(project.status)
+    };
+    setEditingProject(editData);
     setShowEditModal(true);
   };
 
-  const handleUpdateProject = () => {
+  const handleUpdateProject = async (file) => {
     if (!editingProject.name || !editingProject.client) {
-      alert('Please fill in all required fields');
+      throw new Error('Please fill in all required fields');
+    }
+
+    try {
+      await projectAPI.updateProject(editingProject.dbId, editingProject, file);
+      
+      // Reload projects to get the latest data
+      await loadProjects();
+      
+      setShowEditModal(false);
+      setSelectedProject(null);
+      setEditingProject(null);
+      
+      alert('Project updated successfully!');
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleDeleteProject = async (projectId) => {
+    if (!window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
       return;
     }
 
-    setProjects(projects.map(p => p.id === editingProject.id ? editingProject : p));
-    setShowEditModal(false);
-    if (selectedProject && selectedProject.id === editingProject.id) {
-      setSelectedProject(editingProject);
-    }
-    setEditingProject(null);
-    alert('Project updated successfully!');
-  };
+    try {
+      // Find the project to get its database ID
+      const project = projects.find(p => p.id === projectId);
+      if (!project) return;
 
-  const handleDeleteProject = (projectId) => {
-    if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      await projectAPI.deleteProject(project.dbId);
+      
+      // Remove from local state
       setProjects(projects.filter(p => p.id !== projectId));
+      
       if (selectedProject && selectedProject.id === projectId) {
         setSelectedProject(null);
       }
+      
       alert('Project deleted successfully!');
+    } catch (err) {
+      console.error('Failed to delete project:', err);
+      alert(err.error || 'Failed to delete project');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading projects...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -202,9 +280,6 @@ const ProjectManagement = () => {
       <div className="mt-26 pl-16 md:pl-64 min-h-screen">
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-16 z-30">
           <div className="flex items-center gap-3">
-            {/* <button className="text-gray-600">
-              <Menu className="w-6 h-6" />
-            </button> */}
             <h1 className="text-lg font-bold text-gray-900">Projects</h1>
           </div>
           <button onClick={() => setShowNewProjectModal(true)} className="flex items-center gap-1 bg-black text-white px-3 py-2 rounded-lg text-sm hover:bg-gray-800">
@@ -225,6 +300,14 @@ const ProjectManagement = () => {
             </button>
           </div>
         </div>
+
+        {error && (
+          <div className="mx-4 mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <p className="font-medium">Error loading projects</p>
+            <p className="text-sm">{error}</p>
+            <button onClick={loadProjects} className="mt-2 text-sm underline">Try again</button>
+          </div>
+        )}
 
         <div className="p-3 sm:p-4 lg:p-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
@@ -357,4 +440,4 @@ const ProjectManagement = () => {
   );
 };
 
-export default ProjectManagement
+export default ProjectManagement;
