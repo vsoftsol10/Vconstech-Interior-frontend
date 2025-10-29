@@ -146,7 +146,7 @@ const Dashboard = () => {
           );
         })}
       </div>
-
+         
       {/* Middle Section: Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Cost Allocation Chart */}
@@ -202,93 +202,6 @@ const Dashboard = () => {
               <span className="text-xl font-bold text-gray-800">12</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Bottom Section: Ongoing Projects Carousel */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-800">Ongoing Projects</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={prevSlide}
-              className="p-2 rounded-lg bg-gray-100 hover:bg-yellow-400 hover:text-white transition-colors duration-300"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="p-2 rounded-lg bg-gray-100 hover:bg-yellow-400 hover:text-white transition-colors duration-300"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        </div>
-
-        <div className="relative overflow-hidden">
-          <div
-            className="flex transition-transform duration-500 ease-in-out"
-            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-          >
-            {ongoingProjects.map((project) => (
-              <div key={project.id} className="min-w-full px-2">
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
-                  <div className="md:flex">
-                    <div className="md:w-2/5">
-                      <img
-                        src={project.image}
-                        alt={project.name}
-                        className="w-full h-64 md:h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-6 md:w-3/5">
-                      <h3 className="text-2xl font-bold text-gray-800 mb-2">{project.name}</h3>
-                      <p className="text-gray-600 mb-4 flex items-center gap-2">
-                        <Users size={16} />
-                        {project.client}
-                      </p>
-                      
-                      <div className="mb-4">
-                        <div className="flex justify-between mb-2">
-                          <span className="text-gray-700 font-medium">Progress</span>
-                          <span className="text-yellow-600 font-bold">{project.progress}%</span>
-                        </div>
-                        <div className="w-full bg-gray-300 rounded-full h-4 overflow-hidden">
-                          <div
-                            className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-full rounded-full transition-all duration-500"
-                            style={{ width: `${project.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-gray-600 mb-6">
-                        <Calendar size={16} />
-                        <span>Deadline: {new Date(project.deadline).toLocaleDateString()}</span>
-                      </div>
-
-                      <button className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2 group">
-                        View Details
-                        <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Carousel Indicators */}
-        <div className="flex justify-center gap-2 mt-6">
-          {ongoingProjects.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === currentSlide ? 'bg-yellow-600 w-8' : 'bg-gray-300'
-              }`}
-            />
-          ))}
         </div>
       </div>
       </div>
