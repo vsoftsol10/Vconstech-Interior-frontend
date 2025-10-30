@@ -39,6 +39,26 @@ const ProjectManagement = () => {
     loadProjects();
   }, []);
 
+const handleStatusChangeInline = async (projectId, newStatus) => {
+  try {
+    // Find the project
+    const project = projects.find(p => p.id === projectId);
+    if (!project) {
+      throw new Error('Project not found');
+    }
+
+    // Update status only using the dedicated method
+    await projectAPI.updateProjectStatus(project.dbId, newStatus);
+    
+    // Reload projects to get fresh data
+    await loadProjects();
+    
+  } catch (err) {
+    console.error('Failed to update status:', err);
+    alert(err.error || 'Failed to update project status');
+    throw err; // Re-throw so ProjectCard knows it failed
+  }
+};
   const loadProjects = async () => {
     try {
       setLoading(true);
@@ -370,8 +390,8 @@ const ProjectManagement = () => {
               {[
                 { id: 'all', label: 'All' },
                 { id: 'in-progress', label: 'In Progress' },
+                { id: 'completed', label: 'Completed' },
                 { id: 'planning', label: 'Planning' },
-                { id: 'completed', label: 'Completed' }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -394,14 +414,15 @@ const ProjectManagement = () => {
               ) : (
                 filteredProjects.map(project => (
                   <ProjectCard
-                    key={project.id}
-                    project={project}
-                    onView={setSelectedProject}
-                    onEdit={handleEditProject}
-                    onDelete={handleDeleteProject}
-                    getStatusColor={getStatusColor}
-                    getStatusIcon={getStatusIcon}
-                  />
+  key={project.id}
+  project={project}
+  onView={setSelectedProject}
+  onEdit={handleEditProject}
+  onDelete={handleDeleteProject}
+  getStatusColor={getStatusColor}
+  getStatusIcon={getStatusIcon}
+  onStatusChange={handleStatusChangeInline}  // Add this prop
+/>
                 ))
               )}
             </div>

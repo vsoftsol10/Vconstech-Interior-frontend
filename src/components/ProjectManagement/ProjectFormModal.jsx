@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { X, Upload } from 'lucide-react';
-import { projectAPI } from '../../api/projectAPI';
+import React, { useState, useEffect } from "react";
+import { X, Upload } from "lucide-react";
+import { projectAPI } from "../../api/projectAPI";
 
 // Project Form Modal Component
-const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title, submitLabel }) => {
+const ProjectFormModal = ({
+  isOpen,
+  onClose,
+  project,
+  onChange,
+  onSubmit,
+  title,
+  submitLabel,
+}) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -35,22 +43,22 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
     try {
       setError(null);
       const data = await projectAPI.getEmployees();
-      console.log('Loaded employees:', data.employees); // Debug log
+      console.log("Loaded employees:", data.employees); // Debug log
       setEmployees(data.employees || []);
     } catch (err) {
-      console.error('Failed to load employees:', err);
-      
+      console.error("Failed to load employees:", err);
+
       // Check if it's an auth error
-      if (err.error === 'Invalid or expired token' || err.status === 403) {
-        setError('Session expired. Please log in again.');
+      if (err.error === "Invalid or expired token" || err.status === 403) {
+        setError("Session expired. Please log in again.");
         // Clear invalid token
-        localStorage.removeItem('authToken');
+        localStorage.removeItem("authToken");
         // Redirect to login after a short delay
         setTimeout(() => {
-          window.location.href = '/login'; // Adjust path as needed
+          window.location.href = "/login"; // Adjust path as needed
         }, 2000);
       } else {
-        setError('Failed to load site engineers. Please try again.');
+        setError("Failed to load site engineers. Please try again.");
       }
     }
   };
@@ -59,44 +67,59 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
     const errors = {};
 
     // Required field validation
-    if (!project.name || project.name.trim() === '') {
-      errors.name = 'Project name is required';
+    if (!project.name || project.name.trim() === "") {
+      errors.name = "Project name is required";
     }
 
-    if (!project.id && (!project.projectId || project.projectId.trim() === '')) {
-      errors.projectId = 'Project ID is required';
+    if (
+      !project.id &&
+      (!project.projectId || project.projectId.trim() === "")
+    ) {
+      errors.projectId = "Project ID is required";
     }
 
-    if (!project.client || project.client.trim() === '') {
-      errors.client = 'Client name is required';
+    if (!project.client || project.client.trim() === "") {
+      errors.client = "Client name is required";
     }
 
-    if (!project.location || project.location.trim() === '') {
-      errors.location = 'Project location is required';
+    if (!project.location || project.location.trim() === "") {
+      errors.location = "Project location is required";
     }
 
-    if (!project.id && (!project.assignedEmployee || project.assignedEmployee === '')) {
-      errors.assignedEmployee = 'Site Engineer assignment is required for new projects';
+    if (
+      !project.id &&
+      (!project.assignedEmployee || project.assignedEmployee === "")
+    ) {
+      errors.assignedEmployee =
+        "Site Engineer assignment is required for new projects";
     }
 
     // Project ID format validation (only for new projects)
-    if (!project.id && project.projectId && !/^[a-zA-Z0-9_-]+$/.test(project.projectId)) {
-      errors.projectId = 'Project ID can only contain letters, numbers, dashes, and underscores';
+    if (
+      !project.id &&
+      project.projectId &&
+      !/^[a-zA-Z0-9_-]+$/.test(project.projectId)
+    ) {
+      errors.projectId =
+        "Project ID can only contain letters, numbers, dashes, and underscores";
     }
 
     // Date validation
     if (project.startDate && project.endDate) {
       const start = new Date(project.startDate);
       const end = new Date(project.endDate);
-      
+
       if (end < start) {
-        errors.endDate = 'End date must be after start date';
+        errors.endDate = "End date must be after start date";
       }
     }
 
     // Budget validation
-    if (project.budget && (isNaN(project.budget) || parseFloat(project.budget) < 0)) {
-      errors.budget = 'Budget must be a positive number';
+    if (
+      project.budget &&
+      (isNaN(project.budget) || parseFloat(project.budget) < 0)
+    ) {
+      errors.budget = "Budget must be a positive number";
     }
 
     return errors;
@@ -105,10 +128,10 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
   const handleSubmit = async () => {
     // Validate form
     const errors = validateForm();
-    
+
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
-      setError('Please fix the validation errors before submitting');
+      setError("Please fix the validation errors before submitting");
       return;
     }
 
@@ -121,8 +144,8 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
       await onSubmit(selectedFile);
       // Parent component will handle success message and modal closing
     } catch (err) {
-      console.error('Submit error:', err);
-      setError(err.message || err.error || 'Failed to save project');
+      console.error("Submit error:", err);
+      setError(err.message || err.error || "Failed to save project");
     } finally {
       setLoading(false);
     }
@@ -132,17 +155,29 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
     const file = e.target.files[0];
     if (file) {
       // Validate file type (3D design files)
-      const validTypes = ['.dwg', '.dxf', '.skp', '.obj', '.fbx', '.3ds', '.stl', '.rvt', '.ifc'];
-      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-      
+      const validTypes = [
+        ".dwg",
+        ".dxf",
+        ".skp",
+        ".obj",
+        ".fbx",
+        ".3ds",
+        ".stl",
+        ".rvt",
+        ".ifc",
+      ];
+      const fileExtension = "." + file.name.split(".").pop().toLowerCase();
+
       if (!validTypes.includes(fileExtension)) {
-        setError('Invalid file type. Please upload a 3D design file (.dwg, .dxf, .skp, .obj, .fbx, .3ds, .stl, .rvt, .ifc)');
+        setError(
+          "Invalid file type. Please upload a 3D design file (.dwg, .dxf, .skp, .obj, .fbx, .3ds, .stl, .rvt, .ifc)"
+        );
         return;
       }
 
       // Validate file size (e.g., max 50MB)
       if (file.size > 50 * 1024 * 1024) {
-        setError('File size too large. Maximum size is 50MB');
+        setError("File size too large. Maximum size is 50MB");
         return;
       }
 
@@ -156,7 +191,7 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
     setSelectedFile(null);
     setFilePreview(null);
     // Also notify parent to clear the file
-    onChange({...project, designFile: null});
+    onChange({ ...project, designFile: null });
   };
 
   if (!isOpen) return null;
@@ -165,8 +200,14 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" disabled={loading}>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+            disabled={loading}
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -184,23 +225,28 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Project Name <span className="text-red-500">*</span>
               </label>
-              <input 
-                type="text" 
-                value={project.name || ''}
+              <input
+                type="text"
+                value={project.name || ""}
                 onChange={(e) => {
-                  onChange({...project, name: e.target.value});
+                  onChange({ ...project, name: e.target.value });
                   if (validationErrors.name) {
-                    setValidationErrors({...validationErrors, name: undefined});
+                    setValidationErrors({
+                      ...validationErrors,
+                      name: undefined,
+                    });
                   }
                 }}
                 className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.name ? 'border-red-500' : 'border-gray-300'
+                  validationErrors.name ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="Enter project name"
                 disabled={loading}
               />
               {validationErrors.name && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.name}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {validationErrors.name}
+                </p>
               )}
             </div>
 
@@ -210,58 +256,72 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Project ID <span className="text-red-500">*</span>
                 </label>
-                <input 
-                  type="text" 
-                  value={project.projectId || ''}
+                <input
+                  type="text"
+                  value={project.projectId || ""}
                   onChange={(e) => {
-                    onChange({...project, projectId: e.target.value});
+                    onChange({ ...project, projectId: e.target.value });
                     if (validationErrors.projectId) {
-                      setValidationErrors({...validationErrors, projectId: undefined});
+                      setValidationErrors({
+                        ...validationErrors,
+                        projectId: undefined,
+                      });
                     }
                   }}
                   className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    validationErrors.projectId ? 'border-red-500' : 'border-gray-300'
+                    validationErrors.projectId
+                      ? "border-red-500"
+                      : "border-gray-300"
                   }`}
                   placeholder="e.g., PRJ005"
                   disabled={loading}
                 />
                 {validationErrors.projectId && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.projectId}</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    {validationErrors.projectId}
+                  </p>
                 )}
               </div>
             )}
 
             {/* Client Name */}
-            <div className={!project.id ? '' : 'sm:col-span-2'}>
+            <div className={!project.id ? "" : "sm:col-span-2"}>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Client Name <span className="text-red-500">*</span>
               </label>
-              <input 
-                type="text" 
-                value={project.client || ''}
+              <input
+                type="text"
+                value={project.client || ""}
                 onChange={(e) => {
-                  onChange({...project, client: e.target.value});
+                  onChange({ ...project, client: e.target.value });
                   if (validationErrors.client) {
-                    setValidationErrors({...validationErrors, client: undefined});
+                    setValidationErrors({
+                      ...validationErrors,
+                      client: undefined,
+                    });
                   }
                 }}
                 className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.client ? 'border-red-500' : 'border-gray-300'
+                  validationErrors.client ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="Enter client name"
                 disabled={loading}
               />
               {validationErrors.client && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.client}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {validationErrors.client}
+                </p>
               )}
             </div>
 
             {/* Project Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Project Type</label>
-              <select 
-                value={project.type || 'Residential'}
-                onChange={(e) => onChange({...project, type: e.target.value})}
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Project Type
+              </label>
+              <select
+                value={project.type || "Residential"}
+                onChange={(e) => onChange({ ...project, type: e.target.value })}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 disabled={loading}
               >
@@ -274,10 +334,14 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
             {/* Status (only for existing projects) */}
             {project.id && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select 
-                  value={project.status || 'PENDING'}
-                  onChange={(e) => onChange({...project, status: e.target.value})}
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  value={project.status || "PENDING"}
+                  onChange={(e) =>
+                    onChange({ ...project, status: e.target.value })
+                  }
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   disabled={loading}
                 >
@@ -290,64 +354,85 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
 
             {/* Budget */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Budget (₹)</label>
-              <input 
-                type="number" 
-                value={project.budget || ''}
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Budget (₹)
+              </label>
+              <input
+                type="number"
+                value={project.budget || ""}
                 onChange={(e) => {
-                  onChange({...project, budget: e.target.value});
+                  onChange({ ...project, budget: e.target.value });
                   if (validationErrors.budget) {
-                    setValidationErrors({...validationErrors, budget: undefined});
+                    setValidationErrors({
+                      ...validationErrors,
+                      budget: undefined,
+                    });
                   }
                 }}
                 className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.budget ? 'border-red-500' : 'border-gray-300'
+                  validationErrors.budget ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="e.g., 150000"
                 disabled={loading}
                 min="0"
               />
               {validationErrors.budget && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.budget}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {validationErrors.budget}
+                </p>
               )}
             </div>
 
             {/* Start Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-              <input 
-                type="date" 
-                value={project.startDate || ''}
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={project.startDate || ""}
                 onChange={(e) => {
-                  onChange({...project, startDate: e.target.value});
+                  onChange({ ...project, startDate: e.target.value });
                   if (validationErrors.endDate) {
-                    setValidationErrors({...validationErrors, endDate: undefined});
+                    setValidationErrors({
+                      ...validationErrors,
+                      endDate: undefined,
+                    });
                   }
                 }}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 disabled={loading}
               />
             </div>
 
             {/* End Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-              <input 
-                type="date" 
-                value={project.endDate || ''}
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={project.endDate || ""}
                 onChange={(e) => {
-                  onChange({...project, endDate: e.target.value});
+                  onChange({ ...project, endDate: e.target.value });
                   if (validationErrors.endDate) {
-                    setValidationErrors({...validationErrors, endDate: undefined});
+                    setValidationErrors({
+                      ...validationErrors,
+                      endDate: undefined,
+                    });
                   }
                 }}
                 className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.endDate ? 'border-red-500' : 'border-gray-300'
+                  validationErrors.endDate
+                    ? "border-red-500"
+                    : "border-gray-300"
                 }`}
                 disabled={loading}
               />
               {validationErrors.endDate && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.endDate}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {validationErrors.endDate}
+                </p>
               )}
             </div>
 
@@ -356,62 +441,80 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Project Location <span className="text-red-500">*</span>
               </label>
-              <input 
-                type="text" 
-                value={project.location || ''}
+              <input
+                type="text"
+                value={project.location || ""}
                 onChange={(e) => {
-                  onChange({...project, location: e.target.value});
+                  onChange({ ...project, location: e.target.value });
                   if (validationErrors.location) {
-                    setValidationErrors({...validationErrors, location: undefined});
+                    setValidationErrors({
+                      ...validationErrors,
+                      location: undefined,
+                    });
                   }
                 }}
                 className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.location ? 'border-red-500' : 'border-gray-300'
+                  validationErrors.location
+                    ? "border-red-500"
+                    : "border-gray-300"
                 }`}
                 placeholder="Enter project location/address"
                 disabled={loading}
               />
               {validationErrors.location && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.location}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {validationErrors.location}
+                </p>
               )}
             </div>
 
             {/* Assign Site Engineer */}
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Assign Site Engineer {!project.id && <span className="text-red-500">*</span>}
+                Assign Site Engineer{" "}
+                {!project.id && <span className="text-red-500">*</span>}
               </label>
-              <select 
-                value={project.assignedEmployee || ''}
+              <select
+                value={project.assignedEmployee || ""}
                 onChange={(e) => {
-                  onChange({...project, assignedEmployee: e.target.value});
+                  onChange({ ...project, assignedEmployee: e.target.value });
                   if (validationErrors.assignedEmployee) {
-                    setValidationErrors({...validationErrors, assignedEmployee: undefined});
+                    setValidationErrors({
+                      ...validationErrors,
+                      assignedEmployee: undefined,
+                    });
                   }
                 }}
                 className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.assignedEmployee ? 'border-red-500' : 'border-gray-300'
+                  validationErrors.assignedEmployee
+                    ? "border-red-500"
+                    : "border-gray-300"
                 }`}
                 disabled={loading || employees.length === 0}
               >
                 <option value="">Select Site Engineer</option>
+                // In ProjectFormModal.js, around line 285
                 {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name} ({emp.email})
-                  </option>
-                ))}
+  <option key={emp.id} value={emp.id}>
+    {emp.name} ({emp.empId})  {/* ✅ Changed from emp.email to emp.empId */}
+  </option>
+))}
               </select>
               {validationErrors.assignedEmployee && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.assignedEmployee}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {validationErrors.assignedEmployee}
+                </p>
               )}
               {employees.length === 0 && !error && (
                 <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                  <span>⚠️</span> No site engineers available. Please add site engineers first.
+                  <span>⚠️</span> No site engineers available. Please add site
+                  engineers first.
                 </p>
               )}
               {employees.length > 0 && (
                 <p className="text-xs text-gray-500 mt-1">
-                  {employees.length} site engineer{employees.length !== 1 ? 's' : ''} available
+                  {employees.length} site engineer
+                  {employees.length !== 1 ? "s" : ""} available
                 </p>
               )}
             </div>
@@ -424,24 +527,31 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
                 {!filePreview ? (
                   <label className="cursor-pointer block">
-                    <input 
-                      type="file" 
+                    <input
+                      type="file"
                       className="hidden"
                       onChange={handleFileChange}
-                      accept=".dwg,.dxf,.skp,.obj,.fbx,.3ds,.stl,.rvt,.ifc"
+                      accept=".dwg,.dxf,.skp,.obj,.fbx,.3ds,.stl,.rvt,.ifc,.pdf,.docx"
                       disabled={loading}
                     />
                     <div className="flex flex-col items-center justify-center py-2">
                       <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600 mb-1">Click to upload 3D design file</p>
-                      <p className="text-xs text-gray-500">Supported: DWG, DXF, SKP, OBJ, FBX, 3DS, STL, RVT, IFC (Max 50MB)</p>
+                      <p className="text-sm text-gray-600 mb-1">
+                        Click to upload 3D design file
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Supported: DWG, DXF, SKP, OBJ, FBX, 3DS, STL, RVT, IFC,PDF,DOCX
+                        (Max 50MB)
+                      </p>
                     </div>
                   </label>
                 ) : (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Upload className="w-5 h-5 text-blue-500" />
-                      <span className="text-sm text-gray-700 truncate max-w-xs">{filePreview}</span>
+                      <span className="text-sm text-gray-700 truncate max-w-xs">
+                        {filePreview}
+                      </span>
                     </div>
                     <button
                       onClick={handleRemoveFile}
@@ -458,11 +568,15 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
 
             {/* Project Description */}
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Project Description</label>
-              <textarea 
-                rows="4" 
-                value={project.description || ''}
-                onChange={(e) => onChange({...project, description: e.target.value})}
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Project Description
+              </label>
+              <textarea
+                rows="4"
+                value={project.description || ""}
+                onChange={(e) =>
+                  onChange({ ...project, description: e.target.value })
+                }
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="Describe the project..."
                 disabled={loading}
@@ -472,19 +586,19 @@ const ProjectFormModal = ({ isOpen, onClose, project, onChange, onSubmit, title,
         </div>
 
         <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row justify-end gap-3 sticky bottom-0 bg-white">
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
             disabled={loading}
           >
             Cancel
           </button>
-          <button 
-            onClick={handleSubmit} 
+          <button
+            onClick={handleSubmit}
             className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:bg-blue-400 disabled:cursor-not-allowed"
             disabled={loading || (employees.length === 0 && !project.id)}
           >
-            {loading ? 'Saving...' : submitLabel}
+            {loading ? "Saving..." : submitLabel}
           </button>
         </div>
       </div>

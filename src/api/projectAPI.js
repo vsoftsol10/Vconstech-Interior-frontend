@@ -6,6 +6,16 @@ const getAuthToken = () => {
   return localStorage.getItem('authToken');
 };
 
+// Helper function
+const transformStatusToBackend = (status) => {
+  const statusMap = {
+    'Planning': 'PENDING',
+    'In Progress': 'ONGOING',
+    'Completed': 'COMPLETED'
+  };
+  return statusMap[status] || 'PENDING';
+};
+
 // Helper function to handle API responses
 const handleResponse = async (response) => {
   const data = await response.json();
@@ -97,8 +107,7 @@ export const projectAPI = {
     return result;
   },
 
-  // Update project
-  updateProject: async (id, projectData, file = null) => {
+updateProject: async (id, projectData, file = null) => {
     const token = getAuthToken();
     
     const body = {
@@ -132,6 +141,30 @@ export const projectAPI = {
     
     return result;
   },
+  // Update project status
+  updateProjectStatus: async (id, status) => {
+    const token = getAuthToken();
+    
+    // Transform frontend status to backend format
+    const statusMap = {
+      'Planning': 'PENDING',
+      'In Progress': 'ONGOING',
+      'Completed': 'COMPLETED'
+    };
+    const backendStatus = statusMap[status] || status;
+    
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: backendStatus })
+    });
+    
+    return handleResponse(response);
+  },
+
 
   // Delete project
   deleteProject: async (id) => {
@@ -148,6 +181,8 @@ export const projectAPI = {
     return handleResponse(response);
   },
 
+
+
   // Get employees (Site Engineers)
   getEmployees: async () => {
     const token = getAuthToken();
@@ -161,5 +196,6 @@ export const projectAPI = {
     });
     
     return handleResponse(response);
-  }
+  },
+  
 };

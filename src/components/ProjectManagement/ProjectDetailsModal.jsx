@@ -63,20 +63,7 @@ const ProjectDetailsModal = ({ project, onClose, getStatusColor, getStatusIcon, 
               </div>
             )}
           </div>
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-              {['View Tasks', 'Materials', 'Documents', 'Financials', 'Reports', 'Team Chat'].map(action => (
-                <button 
-                  key={action}
-                  onClick={() => onQuickAction(action)}
-                  className="px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs sm:text-sm font-medium"
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>
