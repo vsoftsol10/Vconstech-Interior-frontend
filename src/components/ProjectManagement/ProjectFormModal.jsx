@@ -333,24 +333,27 @@ const ProjectFormModal = ({
 
             {/* Status (only for existing projects) */}
             {project.id && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  value={project.status || "PENDING"}
-                  onChange={(e) =>
-                    onChange({ ...project, status: e.target.value })
-                  }
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  disabled={loading}
-                >
-                  <option value="PENDING">Planning</option>
-                  <option value="ONGOING">In Progress</option>
-                  <option value="COMPLETED">Completed</option>
-                </select>
-              </div>
-            )}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Status
+    </label>
+    <select
+      value={project.status || "Planning"}
+      onChange={(e) =>
+        onChange({ ...project, status: e.target.value })
+      }
+      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+      disabled={loading}
+    >
+      <option value="Planning">Planning</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Completed">Completed</option>
+    </select>
+    <p className="text-xs text-gray-500 mt-1">
+      Current status of the project
+    </p>
+  </div>
+)}
 
             {/* Budget */}
             <div>

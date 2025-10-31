@@ -41,14 +41,16 @@ const ProjectManagement = () => {
 
 const handleStatusChangeInline = async (projectId, newStatus) => {
   try {
-    // Find the project
     const project = projects.find(p => p.id === projectId);
     if (!project) {
       throw new Error('Project not found');
     }
 
-    // Update status only using the dedicated method
-    await projectAPI.updateProjectStatus(project.dbId, newStatus);
+    // Transform frontend status to backend format
+    const backendStatus = transformStatusToBackend(newStatus);
+    
+    // Update status using the dedicated method
+    await projectAPI.updateProjectStatus(project.dbId, backendStatus);
     
     // Reload projects to get fresh data
     await loadProjects();
@@ -56,52 +58,55 @@ const handleStatusChangeInline = async (projectId, newStatus) => {
   } catch (err) {
     console.error('Failed to update status:', err);
     alert(err.error || 'Failed to update project status');
-    throw err; // Re-throw so ProjectCard knows it failed
+    throw err;
   }
 };
   const loadProjects = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await projectAPI.getProjects();
-      
-      // Transform backend data to match frontend format
-      const transformedProjects = data.projects.map(project => ({
-        id: project.projectId,
-        dbId: project.id,
-        name: project.name,
-        client: project.clientName,
-        type: project.projectType,
-        status: transformStatus(project.status),
-        progress: calculateProgress(project),
-        budget: project.budget || 0,
-        spent: calculateSpent(project),
-        startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
-        endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
-        location: project.location || '',
-        team: project.assignments?.map(a => a.user.name) || [],
-        assignedEmployee: project.assignments?.[0]?.userId?.toString() || '',
-        tasks: { 
-          total: project._count?.materialUsed || 0, 
-          completed: 0 
-        },
-        description: project.description || ''
-      }));
-      
-      setProjects(transformedProjects);
-    } catch (err) {
-      console.error('Failed to load projects:', err);
-      setError(err.error || 'Failed to load projects');
-      
-      // Handle auth errors
-      if (err.status === 403 || err.error === 'Invalid or expired token') {
-        localStorage.removeItem('authToken');
-        window.location.href = '/login';
-      }
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+    setError(null);
+    const data = await projectAPI.getProjects();
+    
+    // Transform backend data to match frontend format
+    const transformedProjects = data.projects.map(project => ({
+      id: project.projectId,
+      dbId: project.id,
+      name: project.name,
+      client: project.clientName,
+      type: project.projectType,
+      status: transformStatus(project.status),
+      progress: calculateProgress(project),
+      budget: project.budget || 0,
+      spent: calculateSpent(project),
+      startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
+      endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
+      location: project.location || '',
+      // Fix: Use assignedEngineer instead of assignments
+      team: project.assignedEngineer ? [project.assignedEngineer.name] : [],
+      assignedEmployee: project.assignedEngineer ? project.assignedEngineer.id.toString() : '',
+      assignedEngineerName: project.assignedEngineer ? project.assignedEngineer.name : '',
+      assignedEngineerEmpId: project.assignedEngineer ? project.assignedEngineer.empId : '',
+      tasks: { 
+        total: project._count?.materialUsed || 0, 
+        completed: 0 
+      },
+      description: project.description || ''
+    }));
+    
+    setProjects(transformedProjects);
+  } catch (err) {
+    console.error('Failed to load projects:', err);
+    setError(err.error || 'Failed to load projects');
+    
+    // Handle auth errors
+    if (err.status === 403 || err.error === 'Invalid or expired token') {
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Transform backend status to frontend format
   const transformStatus = (status) => {
@@ -218,37 +223,44 @@ const handleStatusChangeInline = async (projectId, newStatus) => {
     }
   };
 
-  const handleEditProject = (project) => {
-    // Transform project data for editing
-    const editData = {
-      ...project,
-      client: project.client,
-      status: transformStatusToBackend(project.status)
-    };
-    setEditingProject(editData);
-    setShowEditModal(true);
+const handleEditProject = (project) => {
+  // Transform project data for editing - keep frontend status format
+  const editData = {
+    ...project,
+    client: project.client,
+    // Keep status in frontend format for the modal
+    status: project.status
   };
+  setEditingProject(editData);
+  setShowEditModal(true);
+};
 
   const handleUpdateProject = async (file) => {
-    if (!editingProject.name || !editingProject.client) {
-      throw new Error('Please fill in all required fields');
-    }
+  if (!editingProject.name || !editingProject.client) {
+    throw new Error('Please fill in all required fields');
+  }
 
-    try {
-      await projectAPI.updateProject(editingProject.dbId, editingProject, file);
-      
-      // Reload projects to get the latest data
-      await loadProjects();
-      
-      setShowEditModal(false);
-      setSelectedProject(null);
-      setEditingProject(null);
-      
-      alert('Project updated successfully!');
-    } catch (err) {
-      throw err;
-    }
-  };
+  try {
+    // Transform status to backend format if it exists
+    const projectData = {
+      ...editingProject,
+      status: editingProject.status ? transformStatusToBackend(editingProject.status) : undefined
+    };
+    
+    await projectAPI.updateProject(editingProject.dbId, projectData, file);
+    
+    // Reload projects to get the latest data
+    await loadProjects();
+    
+    setShowEditModal(false);
+    setSelectedProject(null);
+    setEditingProject(null);
+    
+    alert('Project updated successfully!');
+  } catch (err) {
+    throw err;
+  }
+};
 
   const handleDeleteProject = async (projectId) => {
     if (!window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {

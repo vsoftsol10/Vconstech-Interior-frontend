@@ -69,43 +69,67 @@ export const projectAPI = {
     return handleResponse(response);
   },
 
-  // Create new project
-  createProject: async (projectData, file = null) => {
-    const token = getAuthToken();
-    
-    // Prepare the request body
-    const body = {
-      projectId: projectData.projectId,
-      name: projectData.name,
-      clientName: projectData.client,
-      projectType: projectData.type,
-      budget: projectData.budget || null,
-      description: projectData.description || null,
-      startDate: projectData.startDate || null,
-      endDate: projectData.endDate || null,
-      location: projectData.location || null,
-      assignedUserId: projectData.assignedEmployee || null
-    };
-    
-    const response = await fetch(`${API_BASE_URL}/projects`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-    
-    const result = await handleResponse(response);
-    
-    // TODO: If file exists, upload it separately
-    // This would require a separate file upload endpoint
-    if (file && result.project) {
-      console.log('File upload will be implemented with file endpoint');
+  // Update the createProject function
+createProject: async (projectData, file = null) => {
+  const token = getAuthToken();
+  
+  const body = {
+    projectId: projectData.projectId,
+    name: projectData.name,
+    clientName: projectData.client,
+    projectType: projectData.type,
+    budget: projectData.budget || null,
+    description: projectData.description || null,
+    startDate: projectData.startDate || null,
+    endDate: projectData.endDate || null,
+    location: projectData.location || null,
+    assignedUserId: projectData.assignedEmployee || null
+  };
+  
+  const response = await fetch(`${API_BASE_URL}/projects`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  
+  const result = await handleResponse(response);
+  
+  // Upload file if exists
+  if (file && result.project) {
+    try {
+      await projectAPI.uploadFile(result.project.id, file);
+    } catch (err) {
+      console.error('File upload failed:', err);
+      // Project created but file upload failed
+      // You might want to handle this differently
     }
-    
-    return result;
-  },
+  }
+  
+  return result;
+},
+
+// Add new function for file upload
+uploadFile: async (projectId, file) => {
+  const token = getAuthToken();
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+      // Don't set Content-Type - browser will set it with boundary
+    },
+    body: formData
+  });
+  
+  return handleResponse(response);
+},
+
 
 updateProject: async (id, projectData, file = null) => {
     const token = getAuthToken();
@@ -197,5 +221,33 @@ updateProject: async (id, projectData, file = null) => {
     
     return handleResponse(response);
   },
+  // Get project files
+getProjectFiles: async (projectId) => {
+  const token = getAuthToken();
   
+  const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return handleResponse(response);
+},
+
+// Delete project file
+deleteProjectFile: async (projectId, fileId) => {
+  const token = getAuthToken();
+  
+  const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/${fileId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return handleResponse(response);
+}
 };
