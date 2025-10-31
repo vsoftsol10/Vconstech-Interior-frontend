@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, User, Home, Mail, Building, UserCog, AlertCircle, CheckCircle } from 'lucide-react';
-
+import bgLogin from '../assets/login-BCK-2.mp4';
 const Login = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -52,7 +52,7 @@ const Login = () => {
         setSuccess('Login successful!');
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
+
         setTimeout(() => {
           window.location.href = '/dashboard';
         }, 1000);
@@ -72,8 +72,8 @@ const Login = () => {
     setError('');
     setSuccess('');
 
-    if (!signupData.name || !signupData.email || !signupData.role || 
-        !signupData.companyName || !signupData.password || !signupData.confirmPassword) {
+    if (!signupData.name || !signupData.email || !signupData.role ||
+      !signupData.companyName || !signupData.password || !signupData.confirmPassword) {
       setError('All fields are required');
       return;
     }
@@ -117,7 +117,7 @@ const Login = () => {
         setSuccess('Login successful!');
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
+
         setSignupData({
           name: '',
           email: '',
@@ -149,25 +149,39 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-white flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-black relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-400 via-gray-900 to-amber-400"></div>
-        
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '40px 40px'
-          }}></div>
-        </div>
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-black">
+        {/* Background Video */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          src={bgLogin}
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
 
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-400 via-gray-900 to-amber-400 opacity-70"></div>
+
+        {/* Pattern Overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div
+            className="absolute inset-0"
+            style={{
+              // backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+              backgroundSize: '40px 40px',
+            }}
+          ></div>
+        </div>
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="max-w-md text-center">
-            <h1 className="text-5xl font-bold text-white mb-4">INTERIOR</h1>
-            <p className="text-xl text-gray-100 mb-8">Enterprise Resource Planning</p>
+            <h1 className="text-5xl font-bold text-white mb-4">INTERIOR ERP</h1>
+            <p className="text-xl text-gray-100 mb-8">Admin Login</p>
             <div className="w-20 h-1 mx-auto" style={{ backgroundColor: '#ffbe2a' }}></div>
             <p className="text-gray-100 mt-8 text-lg">
-              {activeTab === 'login' 
-                ? 'Streamline your business operations with our comprehensive ERP solution'
-                : 'Join us and transform your business operations today'
+              {activeTab === 'login'
+                ? 'Access the complete control panel to manage projects, materials, and teams efficiently.'
+                : 'Join us and transform your business operations today.'
               }
             </p>
           </div>
@@ -191,7 +205,7 @@ const Login = () => {
                 <p className="text-sm text-red-800">{error}</p>
               </div>
             )}
-            
+
             {success && (
               <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start">
                 <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
@@ -206,11 +220,10 @@ const Login = () => {
                   setError('');
                   setSuccess('');
                 }}
-                className={`flex-1 py-2 px-4 rounded-md font-semibold transition-all duration-200 ${
-                  activeTab === 'login'
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-gray-600 hover:text-black'
-                }`}
+                className={`flex-1 py-2 px-4 rounded-md font-semibold transition-all duration-200 ${activeTab === 'login'
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-gray-600 hover:text-black'
+                  }`}
               >
                 Login
               </button>
@@ -220,11 +233,10 @@ const Login = () => {
                   setError('');
                   setSuccess('');
                 }}
-                className={`flex-1 py-2 px-4 rounded-md font-semibold transition-all duration-200 ${
-                  activeTab === 'signup'
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-gray-600 hover:text-black'
-                }`}
+                className={`flex-1 py-2 px-4 rounded-md font-semibold transition-all duration-200 ${activeTab === 'signup'
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-gray-600 hover:text-black'
+                  }`}
               >
                 Sign Up
               </button>
@@ -241,14 +253,12 @@ const Login = () => {
                       Email
                     </label>
                     <div
-                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${
-                        isFocused.loginEmail ? 'border-black' : 'border-gray-300'
-                      }`}
+                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${isFocused.loginEmail ? 'border-black' : 'border-gray-300'
+                        }`}
                     >
                       <div className="flex items-center px-4 py-3">
-                        <Mail className={`w-5 h-5 transition-colors ${
-                          isFocused.loginEmail ? 'text-black' : 'text-gray-400'
-                        }`} />
+                        <Mail className={`w-5 h-5 transition-colors ${isFocused.loginEmail ? 'text-black' : 'text-gray-400'
+                          }`} />
                         <input
                           type="email"
                           value={loginData.email}
@@ -268,14 +278,12 @@ const Login = () => {
                       Password
                     </label>
                     <div
-                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${
-                        isFocused.loginPassword ? 'border-black' : 'border-gray-300'
-                      }`}
+                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${isFocused.loginPassword ? 'border-black' : 'border-gray-300'
+                        }`}
                     >
                       <div className="flex items-center px-4 py-3">
-                        <Lock className={`w-5 h-5 transition-colors ${
-                          isFocused.loginPassword ? 'text-black' : 'text-gray-400'
-                        }`} />
+                        <Lock className={`w-5 h-5 transition-colors ${isFocused.loginPassword ? 'text-black' : 'text-gray-400'
+                          }`} />
                         <input
                           type="password"
                           value={loginData.password}
@@ -315,14 +323,12 @@ const Login = () => {
                       Full Name
                     </label>
                     <div
-                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${
-                        isFocused.name ? 'border-black' : 'border-gray-300'
-                      }`}
+                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${isFocused.name ? 'border-black' : 'border-gray-300'
+                        }`}
                     >
                       <div className="flex items-center px-4 py-3">
-                        <User className={`w-5 h-5 transition-colors ${
-                          isFocused.name ? 'text-black' : 'text-gray-400'
-                        }`} />
+                        <User className={`w-5 h-5 transition-colors ${isFocused.name ? 'text-black' : 'text-gray-400'
+                          }`} />
                         <input
                           type="text"
                           value={signupData.name}
@@ -342,14 +348,12 @@ const Login = () => {
                       Email
                     </label>
                     <div
-                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${
-                        isFocused.email ? 'border-black' : 'border-gray-300'
-                      }`}
+                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${isFocused.email ? 'border-black' : 'border-gray-300'
+                        }`}
                     >
                       <div className="flex items-center px-4 py-3">
-                        <Mail className={`w-5 h-5 transition-colors ${
-                          isFocused.email ? 'text-black' : 'text-gray-400'
-                        }`} />
+                        <Mail className={`w-5 h-5 transition-colors ${isFocused.email ? 'text-black' : 'text-gray-400'
+                          }`} />
                         <input
                           type="email"
                           value={signupData.email}
@@ -369,14 +373,12 @@ const Login = () => {
                       Role
                     </label>
                     <div
-                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${
-                        isFocused.role ? 'border-black' : 'border-gray-300'
-                      }`}
+                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${isFocused.role ? 'border-black' : 'border-gray-300'
+                        }`}
                     >
                       <div className="flex items-center px-4 py-3">
-                        <UserCog className={`w-5 h-5 transition-colors ${
-                          isFocused.role ? 'text-black' : 'text-gray-400'
-                        }`} />
+                        <UserCog className={`w-5 h-5 transition-colors ${isFocused.role ? 'text-black' : 'text-gray-400'
+                          }`} />
                         <select
                           value={signupData.role}
                           onChange={(e) => setSignupData({ ...signupData, role: e.target.value })}
@@ -399,14 +401,12 @@ const Login = () => {
                       Company Name
                     </label>
                     <div
-                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${
-                        isFocused.companyName ? 'border-black' : 'border-gray-300'
-                      }`}
+                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${isFocused.companyName ? 'border-black' : 'border-gray-300'
+                        }`}
                     >
                       <div className="flex items-center px-4 py-3">
-                        <Building className={`w-5 h-5 transition-colors ${
-                          isFocused.companyName ? 'text-black' : 'text-gray-400'
-                        }`} />
+                        <Building className={`w-5 h-5 transition-colors ${isFocused.companyName ? 'text-black' : 'text-gray-400'
+                          }`} />
                         <input
                           type="text"
                           value={signupData.companyName}
@@ -426,14 +426,12 @@ const Login = () => {
                       Password
                     </label>
                     <div
-                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${
-                        isFocused.signupPassword ? 'border-black' : 'border-gray-300'
-                      }`}
+                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${isFocused.signupPassword ? 'border-black' : 'border-gray-300'
+                        }`}
                     >
                       <div className="flex items-center px-4 py-3">
-                        <Lock className={`w-5 h-5 transition-colors ${
-                          isFocused.signupPassword ? 'text-black' : 'text-gray-400'
-                        }`} />
+                        <Lock className={`w-5 h-5 transition-colors ${isFocused.signupPassword ? 'text-black' : 'text-gray-400'
+                          }`} />
                         <input
                           type="password"
                           value={signupData.password}
@@ -453,14 +451,12 @@ const Login = () => {
                       Confirm Password
                     </label>
                     <div
-                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${
-                        isFocused.confirmPassword ? 'border-black' : 'border-gray-300'
-                      }`}
+                      className={`relative bg-white rounded-lg border-2 transition-all duration-200 ${isFocused.confirmPassword ? 'border-black' : 'border-gray-300'
+                        }`}
                     >
                       <div className="flex items-center px-4 py-3">
-                        <Lock className={`w-5 h-5 transition-colors ${
-                          isFocused.confirmPassword ? 'text-black' : 'text-gray-400'
-                        }`} />
+                        <Lock className={`w-5 h-5 transition-colors ${isFocused.confirmPassword ? 'text-black' : 'text-gray-400'
+                          }`} />
                         <input
                           type="password"
                           value={signupData.confirmPassword}

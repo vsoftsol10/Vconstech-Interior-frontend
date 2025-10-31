@@ -16,6 +16,16 @@ const ProjectsTab = ({
   const [rejectReason, setRejectReason] = React.useState("");
   const [selectedRequestId, setSelectedRequestId] = React.useState(null);
   const dropdownRef = React.useRef(null);
+  
+  // Add Material Modal States
+  const [showAddMaterialModal, setShowAddMaterialModal] = React.useState(false);
+  const [newMaterial, setNewMaterial] = React.useState({
+    materialId: "",
+    quantity: "",
+  });
+  
+  // Filter State
+  const [statusFilter, setStatusFilter] = React.useState("All");
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
@@ -37,10 +47,25 @@ const ProjectsTab = ({
 
   const selectedProjectData = projects.find(p => p.id === selectedProject);
 
+  // Filter project materials by status
+  const filteredProjectMaterials = statusFilter === "All" 
+    ? projectMaterials 
+    : projectMaterials.filter(pm => pm.status === statusFilter);
+
   const handleProjectSelect = (projectId) => {
     setSelectedProject(projectId);
     setSearchTerm("");
     setIsDropdownOpen(false);
+  };
+  
+  const handleAddMaterial = () => {
+    if (newMaterial.materialId && newMaterial.quantity && selectedProject) {
+      if (onAddProjectMaterial) {
+        onAddProjectMaterial(selectedProject, newMaterial.materialId, parseFloat(newMaterial.quantity));
+      }
+      setShowAddMaterialModal(false);
+      setNewMaterial({ name: " ", materialId: "", quantity: "" });
+    }
   };
 
   const handleRejectClick = (requestId) => {
@@ -130,15 +155,44 @@ const ProjectsTab = ({
               )}
             </div>
           </div>
+          
+          {/* Add Material Button */}
+          <button
+            onClick={() => setShowAddMaterialModal(true)}
+            disabled={!selectedProject}
+            className="w-full sm:w-auto px-4 py-2 bg-[#ffbe2a] text-black text-sm font-medium rounded-lg hover:bg-[#e6ab25] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Material
+          </button>
         </div>
       </div>
 
       {/* Materials Allocated Table */}
       <div className="bg-white rounded-lg md:rounded-xl shadow overflow-hidden">
-        <div className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border-b border-gray-200">
+        <div className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">
             Materials Allocated
           </h2>
+          
+          {/* Status Filter */}
+          <div className="flex gap-2">
+            {["All", "Active", "Completed"].map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  statusFilter === status
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
         </div>
         
         {/* Desktop Table View */}
@@ -163,17 +217,17 @@ const ProjectsTab = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {projectMaterials.length === 0 ? (
+              {filteredProjectMaterials.length === 0 ? (
                 <tr>
                   <td
                     colSpan="5"
                     className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm"
                   >
-                    No materials allocated yet
+                    {statusFilter === "All" ? "No materials allocated yet" : `No ${statusFilter.toLowerCase()} materials found`}
                   </td>
                 </tr>
               ) : (
-                projectMaterials.map((pm, idx) => (
+                filteredProjectMaterials.map((pm, idx) => (
                   <tr
                     key={idx}
                     className="hover:bg-gray-50 transition-colors duration-200"
@@ -212,12 +266,12 @@ const ProjectsTab = ({
 
         {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-gray-200">
-          {projectMaterials.length === 0 ? (
+          {filteredProjectMaterials.length === 0 ? (
             <div className="px-4 py-8 text-center text-gray-500 text-sm">
-              No materials allocated yet
+              {statusFilter === "All" ? "No materials allocated yet" : `No ${statusFilter.toLowerCase()} materials found`}
             </div>
           ) : (
-            projectMaterials.map((pm, idx) => (
+            filteredProjectMaterials.map((pm, idx) => (
               <div key={idx} className="p-4 space-y-2.5">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -439,6 +493,77 @@ const ProjectsTab = ({
           </div>
         </div>
       )}
+      
+      {/* Add Material Modal */}
+      {showAddMaterialModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+              Add Material to Project
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 mb-4">
+              Project: <span className="font-medium">{selectedProjectData?.name}</span>
+            </p>
+            
+            <div className="space-y-4">
+              {/* Material Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Select Material
+                </label>
+                <select
+                  value={newMaterial.materialId}
+                  onChange={(e) => setNewMaterial({ ...newMaterial, materialId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                >
+                  <option value="">Choose a material...</option>
+                  <option value="mat-001">Cement</option>
+                  <option value="mat-002">Steel Rods</option>
+                  <option value="mat-003">Bitumen</option>
+                  <option value="mat-004">Sand</option>
+                  <option value="mat-005">Gravel</option>
+                  <option value="mat-006">Concrete Mix</option>
+                </select>
+              </div>
+              
+              {/* Quantity Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  value={newMaterial.quantity}
+                  onChange={(e) => setNewMaterial({ ...newMaterial, quantity: e.target.value })}
+                  placeholder="Enter quantity"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2 sm:gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowAddMaterialModal(false);
+                  setNewMaterial({ materialId: "", quantity: "" });
+                }}
+                className="flex-1 px-3 sm:px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddMaterial}
+                disabled={!newMaterial.materialId || !newMaterial.quantity}
+                className="flex-1 px-3 sm:px-4 py-2 bg-[#ffbe2a] text-black text-sm font-medium rounded-lg hover:bg-[#e6ab25] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                Add Material
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -446,6 +571,33 @@ const ProjectsTab = ({
 // Sample data for demonstration
 const SampleApp = () => {
   const [selectedProject, setSelectedProject] = React.useState("proj-001");
+  const [projectMaterials, setProjectMaterials] = React.useState([
+    {
+      projectName: "Building A Construction",
+      material: { name: "Cement", unit: "bags", defaultRate: 450 },
+      used: 150,
+      status: "Active",
+    },
+    {
+      projectName: "Building A Construction",
+      material: { name: "Steel Rods", unit: "kg", defaultRate: 65 },
+      used: 2500,
+      status: "Active",
+    },
+    {
+      projectName: "Road Extension Project",
+      material: { name: "Bitumen", unit: "liters", defaultRate: 85 },
+      used: 5000,
+      status: "Active",
+    },
+    {
+      projectName: "Bridge Repair",
+      material: { name: "Concrete Mix", unit: "cubic meters", defaultRate: 3500 },
+      used: 45,
+      status: "Completed",
+    },
+  ]);
+  
   const [materialRequests, setMaterialRequests] = React.useState([
     {
       id: "req-001",
@@ -501,32 +653,32 @@ const SampleApp = () => {
     { id: "proj-003", name: "Bridge Repair", status: "Completed" },
   ];
 
-  const projectMaterials = [
-    {
-      projectName: "Building A Construction",
-      material: { name: "Cement", unit: "bags", defaultRate: 450 },
-      used: 150,
-      status: "Active",
-    },
-    {
-      projectName: "Building A Construction",
-      material: { name: "Steel Rods", unit: "kg", defaultRate: 65 },
-      used: 2500,
-      status: "Active",
-    },
-    {
-      projectName: "Road Extension Project",
-      material: { name: "Bitumen", unit: "liters", defaultRate: 85 },
-      used: 5000,
-      status: "Active",
-    },
-    {
-      projectName: "Bridge Repair",
-      material: { name: "Concrete Mix", unit: "cubic meters", defaultRate: 3500 },
-      used: 45,
-      status: "Completed",
-    },
-  ];
+  // Material catalog for adding new materials
+  const materialCatalog = {
+    "mat-001": { name: "Cement", unit: "bags", defaultRate: 450 },
+    "mat-002": { name: "Steel Rods", unit: "kg", defaultRate: 65 },
+    "mat-003": { name: "Bitumen", unit: "liters", defaultRate: 85 },
+    "mat-004": { name: "Sand", unit: "tons", defaultRate: 1500 },
+    "mat-005": { name: "Gravel", unit: "tons", defaultRate: 1200 },
+    "mat-006": { name: "Concrete Mix", unit: "cubic meters", defaultRate: 3500 },
+  };
+
+  // Handle adding material to project
+  const handleAddProjectMaterial = (projectId, materialId, quantity) => {
+    const project = projects.find(p => p.id === projectId);
+    const material = materialCatalog[materialId];
+    
+    if (project && material) {
+      const newProjectMaterial = {
+        projectName: project.name,
+        material: material,
+        used: quantity,
+        status: project.status,
+      };
+      
+      setProjectMaterials(prev => [...prev, newProjectMaterial]);
+    }
+  };
 
   // Handle accept request
   const handleAcceptRequest = (requestId) => {
@@ -561,6 +713,7 @@ const SampleApp = () => {
         setSelectedProject={setSelectedProject}
         projectMaterials={projectMaterials}
         materialRequests={enrichedMaterialRequests}
+        onAddProjectMaterial={handleAddProjectMaterial}
       />
     </div>
   );
