@@ -8,7 +8,7 @@ const ProjectsTab = ({
   projectMaterials,
   materialRequests,
   onAddProjectMaterial,
-  onLogUsage,
+  onUpdateMaterialStatus,
 }) => {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
@@ -26,6 +26,11 @@ const ProjectsTab = ({
   
   // Filter State
   const [statusFilter, setStatusFilter] = React.useState("All");
+  
+  // Status Update Modal States
+  const [showStatusModal, setShowStatusModal] = React.useState(false);
+  const [selectedMaterialIndex, setSelectedMaterialIndex] = React.useState(null);
+  const [newStatus, setNewStatus] = React.useState("");
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
@@ -64,7 +69,7 @@ const ProjectsTab = ({
         onAddProjectMaterial(selectedProject, newMaterial.materialId, parseFloat(newMaterial.quantity));
       }
       setShowAddMaterialModal(false);
-      setNewMaterial({ name: " ", materialId: "", quantity: "" });
+      setNewMaterial({ materialId: "", quantity: "" });
     }
   };
 
@@ -89,6 +94,28 @@ const ProjectsTab = ({
     setShowRejectModal(false);
     setRejectReason("");
     setSelectedRequestId(null);
+  };
+  
+  const handleStatusUpdateClick = (index) => {
+    const materialToUpdate = filteredProjectMaterials[index];
+    setSelectedMaterialIndex(projectMaterials.indexOf(materialToUpdate));
+    setNewStatus(materialToUpdate.status);
+    setShowStatusModal(true);
+  };
+  
+  const handleStatusUpdateConfirm = () => {
+    if (selectedMaterialIndex !== null && newStatus && onUpdateMaterialStatus) {
+      onUpdateMaterialStatus(selectedMaterialIndex, newStatus);
+      setShowStatusModal(false);
+      setSelectedMaterialIndex(null);
+      setNewStatus("");
+    }
+  };
+  
+  const handleStatusUpdateCancel = () => {
+    setShowStatusModal(false);
+    setSelectedMaterialIndex(null);
+    setNewStatus("");
   };
 
   return (
@@ -178,8 +205,8 @@ const ProjectsTab = ({
           </h2>
           
           {/* Status Filter */}
-          <div className="flex gap-2">
-            {["All", "Active", "Completed"].map((status) => (
+          <div className="flex gap-2 flex-wrap">
+            {["All", "Active", "Completed", "On Hold"].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
@@ -206,6 +233,7 @@ const ProjectsTab = ({
                   "Used",
                   "Cost",
                   "Status",
+                  "Action",
                 ].map((header) => (
                   <th
                     key={header}
@@ -220,7 +248,7 @@ const ProjectsTab = ({
               {filteredProjectMaterials.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan="6"
                     className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm"
                   >
                     {statusFilter === "All" ? "No materials allocated yet" : `No ${statusFilter.toLowerCase()} materials found`}
@@ -251,11 +279,21 @@ const ProjectsTab = ({
                             ? "bg-green-100 text-green-800"
                             : pm.status === "Completed"
                             ? "bg-blue-100 text-blue-800"
+                            : pm.status === "On Hold"
+                            ? "bg-yellow-100 text-yellow-800"
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {pm.status}
                       </span>
+                    </td>
+                    <td className="px-4 lg:px-6 py-3">
+                      <button
+                        onClick={() => handleStatusUpdateClick(idx)}
+                        className="px-3 py-1.5 bg-yellow-500 text-black text-xs font-medium rounded-lg hover:bg-yellow-400 transition-colors whitespace-nowrap"
+                      >
+                        Update Status
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -284,6 +322,8 @@ const ProjectsTab = ({
                         ? "bg-green-100 text-green-800"
                         : pm.status === "Completed"
                         ? "bg-blue-100 text-blue-800"
+                        : pm.status === "On Hold"
+                        ? "bg-yellow-100 text-yellow-800"
                         : "bg-gray-100 text-gray-800"
                     }`}
                   >
@@ -298,6 +338,12 @@ const ProjectsTab = ({
                   <span className="text-gray-600">Cost:</span>
                   <span className="text-gray-900 font-semibold">₹{((pm.material?.defaultRate || 0) * pm.used).toLocaleString()}</span>
                 </div>
+                <button
+                  onClick={() => handleStatusUpdateClick(idx)}
+                  className="w-full mt-2 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Update Status
+                </button>
               </div>
             ))
           )}
@@ -488,6 +534,73 @@ const ProjectsTab = ({
                 className="flex-1 px-3 sm:px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Status Update Modal */}
+      {showStatusModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+              Update Material Status
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 mb-4">
+              Material: <span className="font-medium">
+                {selectedMaterialIndex !== null ? projectMaterials[selectedMaterialIndex]?.material?.name : ""}
+              </span>
+            </p>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Status
+              </label>
+              <div className="space-y-2">
+                {["Active", "Completed", "On Hold"].map((status) => (
+                  <label 
+                    key={status} 
+                    className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="radio"
+                      name="status"
+                      value={status}
+                      checked={newStatus === status}
+                      onChange={(e) => setNewStatus(e.target.value)}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-3 text-sm text-gray-900">{status}</span>
+                    <span 
+                      className={`ml-auto px-2 py-0.5 text-xs font-medium rounded-full ${
+                        status === "Active"
+                          ? "bg-green-100 text-green-800"
+                          : status === "Completed"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {status}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex gap-2 sm:gap-3 mt-6">
+              <button
+                onClick={handleStatusUpdateCancel}
+                className="flex-1 px-3 sm:px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStatusUpdateConfirm}
+                disabled={!newStatus}
+                className="flex-1 px-3 sm:px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                Update
               </button>
             </div>
           </div>
@@ -697,6 +810,15 @@ const SampleApp = () => {
       )
     );
   };
+  
+  // Handle status update for project materials
+  const handleUpdateMaterialStatus = (index, newStatus) => {
+    setProjectMaterials(prev => 
+      prev.map((pm, idx) => 
+        idx === index ? { ...pm, status: newStatus } : pm
+      )
+    );
+  };
 
   // Add handlers to material requests
   const enrichedMaterialRequests = materialRequests.map(req => ({
@@ -714,6 +836,7 @@ const SampleApp = () => {
         projectMaterials={projectMaterials}
         materialRequests={enrichedMaterialRequests}
         onAddProjectMaterial={handleAddProjectMaterial}
+        onUpdateMaterialStatus={handleUpdateMaterialStatus}
       />
     </div>
   );
