@@ -23,8 +23,8 @@ const ProjectFormModal = ({
   useEffect(() => {
     if (isOpen) {
       loadEmployees();
-      // Set existing file preview if editing
-      if (project.designFile) {
+      // Set existing file preview if editing (only when modal first opens, not on every render)
+      if (project.designFile && !selectedFile) {
         setFilePreview(project.designFile);
       }
       // Clear validation errors when modal opens
@@ -37,7 +37,7 @@ const ProjectFormModal = ({
       setValidationErrors({});
       setError(null);
     }
-  }, [isOpen, project.designFile]);
+  }, [isOpen]); // Removed project.designFile from dependencies to prevent re-rendering issues
 
   const loadEmployees = async () => {
     try {
@@ -55,7 +55,7 @@ const ProjectFormModal = ({
         localStorage.removeItem("authToken");
         // Redirect to login after a short delay
         setTimeout(() => {
-          window.location.href = "/login"; // Adjust path as needed
+          window.location.href = "/login";
         }, 2000);
       } else {
         setError("Failed to load site engineers. Please try again.");
@@ -165,12 +165,14 @@ const ProjectFormModal = ({
         ".stl",
         ".rvt",
         ".ifc",
+        ".pdf",
+        ".docx"
       ];
       const fileExtension = "." + file.name.split(".").pop().toLowerCase();
 
       if (!validTypes.includes(fileExtension)) {
         setError(
-          "Invalid file type. Please upload a 3D design file (.dwg, .dxf, .skp, .obj, .fbx, .3ds, .stl, .rvt, .ifc)"
+          "Invalid file type. Please upload a valid design file (.dwg, .dxf, .skp, .obj, .fbx, .3ds, .stl, .rvt, .ifc, .pdf, .docx)"
         );
         return;
       }
@@ -181,15 +183,23 @@ const ProjectFormModal = ({
         return;
       }
 
+      // Set the file and preview
       setSelectedFile(file);
       setFilePreview(file.name);
       setError(null);
+      
+      console.log("File selected:", file.name); // Debug log
     }
   };
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setFilePreview(null);
+    // Clear the file input
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = '';
+    }
     // Also notify parent to clear the file
     onChange({ ...project, designFile: null });
   };
@@ -333,27 +343,27 @@ const ProjectFormModal = ({
 
             {/* Status (only for existing projects) */}
             {project.id && (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-2">
-      Status
-    </label>
-    <select
-      value={project.status || "Planning"}
-      onChange={(e) =>
-        onChange({ ...project, status: e.target.value })
-      }
-      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-      disabled={loading}
-    >
-      <option value="Planning">Planning</option>
-      <option value="In Progress">In Progress</option>
-      <option value="Completed">Completed</option>
-    </select>
-    <p className="text-xs text-gray-500 mt-1">
-      Current status of the project
-    </p>
-  </div>
-)}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  value={project.status || "Planning"}
+                  onChange={(e) =>
+                    onChange({ ...project, status: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
+                >
+                  <option value="Planning">Planning</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Current status of the project
+                </p>
+              </div>
+            )}
 
             {/* Budget */}
             <div>
@@ -496,12 +506,11 @@ const ProjectFormModal = ({
                 disabled={loading || employees.length === 0}
               >
                 <option value="">Select Site Engineer</option>
-                // In ProjectFormModal.js, around line 285
                 {employees.map((emp) => (
-  <option key={emp.id} value={emp.id}>
-    {emp.name} ({emp.empId})  {/* ✅ Changed from emp.email to emp.empId */}
-  </option>
-))}
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name} ({emp.empId})
+                  </option>
+                ))}
               </select>
               {validationErrors.assignedEmployee && (
                 <p className="text-red-500 text-xs mt-1">
@@ -543,22 +552,29 @@ const ProjectFormModal = ({
                         Click to upload 3D design file
                       </p>
                       <p className="text-xs text-gray-500">
-                        Supported: DWG, DXF, SKP, OBJ, FBX, 3DS, STL, RVT, IFC,PDF,DOCX
+                        Supported: DWG, DXF, SKP, OBJ, FBX, 3DS, STL, RVT, IFC, PDF, DOCX
                         (Max 50MB)
                       </p>
                     </div>
                   </label>
                 ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Upload className="w-5 h-5 text-blue-500" />
-                      <span className="text-sm text-gray-700 truncate max-w-xs">
-                        {filePreview}
-                      </span>
+                  <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex-shrink-0">
+                        <Upload className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {filePreview}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          File ready for upload
+                        </p>
+                      </div>
                     </div>
                     <button
                       onClick={handleRemoveFile}
-                      className="text-red-500 hover:text-red-700 text-sm font-medium"
+                      className="ml-3 flex-shrink-0 text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
                       disabled={loading}
                       type="button"
                     >
