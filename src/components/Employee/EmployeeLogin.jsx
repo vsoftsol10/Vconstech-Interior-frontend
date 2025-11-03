@@ -1,17 +1,44 @@
 import React, { useState } from 'react';
-import { User, Lock } from 'lucide-react';
+import { User, Lock, AlertCircle } from 'lucide-react';
 import loginBack from "../../assets/login-BCK-2.mp4"
 import { useNavigate } from 'react-router-dom';
+import { loginEngineer } from '../../api/engineerService';
 
 export default function EmployeeLogin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const navigate=useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate("/employee-dashboard")
-    console.log('Login attempt:', { username, password });
+    setError('');
+
+    // Validation
+    if (!username.trim() || !password.trim()) {
+      setError('Please enter both username and password');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await loginEngineer(username, password);
+      
+      if (response.success) {
+        // Store engineer data in localStorage
+        localStorage.setItem('engineerData', JSON.stringify(response.engineer));
+        
+        // Redirect to engineer dashboard
+        navigate('/employee-dashboard');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.error || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,7 +78,15 @@ export default function EmployeeLogin() {
               </p>
             </div>
 
-            <div className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Username
@@ -63,9 +98,13 @@ export default function EmployeeLogin() {
                   <input
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      setError('');
+                    }}
                     placeholder="Enter your username"
                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all outline-none"
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -81,20 +120,25 @@ export default function EmployeeLogin() {
                   <input
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError('');
+                    }}
                     placeholder="Enter your password"
                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all outline-none"
+                    disabled={loading}
                   />
                 </div>
               </div>
 
               <button
-                onClick={handleSubmit}
-                className="w-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold py-3 px-4 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+                type="submit"
+                disabled={loading}
+                className="w-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold py-3 px-4 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign In
+                {loading ? 'Signing In...' : 'Sign In'}
               </button>
-            </div>
+            </form>
 
             <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
@@ -102,6 +146,12 @@ export default function EmployeeLogin() {
               </p>
               <p className="text-sm text-gray-700">Username: demo</p>
               <p className="text-sm text-gray-700">Password: demo123</p>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Having trouble? Contact your administrator
+              </p>
             </div>
           </div>
         </div>

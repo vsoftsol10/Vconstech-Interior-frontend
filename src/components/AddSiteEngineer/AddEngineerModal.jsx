@@ -267,7 +267,7 @@ const AddEngineerModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
                     onChange={handleInputChange}
                     rows="4"
                     className={`block w-full pl-10 pr-3 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                    placeholder="Enter complete address"
+                    placeholder="Address of the Engineer"
                   />
                 </div>
                 {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}

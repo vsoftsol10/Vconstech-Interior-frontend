@@ -5,7 +5,7 @@ import MetricCard from "./MetricCard";
 const DashboardTab = ({ metrics, usageLogs, projects, materials }) => (
   <div className="space-y-6 p-4 sm:p-6">
     {/* Metrics Section */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       <MetricCard
         title="Total Materials"
         value={metrics.totalMaterials}
@@ -24,13 +24,7 @@ const DashboardTab = ({ metrics, usageLogs, projects, materials }) => (
         icon={IndianRupee}
         iconColor="text-green-600"
       />
-      <MetricCard
-        title="Overused Materials"
-        value={metrics.overusedMaterials}
-        icon={AlertCircle}
-        iconColor="text-red-600"
-        valueColor="text-red-600"
-      />
+      
     </div>
 
     {/* Recent Material Usage Table */}

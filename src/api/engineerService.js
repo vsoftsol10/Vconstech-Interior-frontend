@@ -74,6 +74,33 @@ api.interceptors.response.use(
   }
 );
 
+// ============================================
+// ENGINEER LOGIN (NEW)
+// ============================================
+export const loginEngineer = async (username, password) => {
+  try {
+    const response = await axios.post(`${API_URL}/engineers/login`, {
+      username,
+      password
+    });
+    
+    if (response.data.success) {
+      // Store token and engineer data
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('engineer', JSON.stringify(response.data.engineer));
+      return response.data;
+    }
+    
+    throw new Error(response.data.error || 'Login failed');
+  } catch (error) {
+    throw error.response?.data || error || { error: 'Login failed' };
+  }
+};
+
+// ============================================
+// ADMIN OPERATIONS
+// ============================================
+
 // Get all engineers
 export const getAllEngineers = async () => {
   try {
@@ -94,7 +121,7 @@ export const getEngineerById = async (id) => {
   }
 };
 
-// Create engineer - FIXED VERSION
+// Create engineer
 export const createEngineer = async (engineerData) => {
   try {
     // Check token expiry first
@@ -112,39 +139,41 @@ export const createEngineer = async (engineerData) => {
     formData.append('empId', engineerData.empId);
     formData.append('address', engineerData.address);
     
+    // Add username and password if provided
+    if (engineerData.username) {
+      formData.append('username', engineerData.username);
+    }
+    if (engineerData.password) {
+      formData.append('password', engineerData.password);
+    }
+    
     if (engineerData.profileImage) {
       formData.append('profileImage', engineerData.profileImage);
     }
     
-    // Use the full API_URL instead of relative path
     const response = await fetch(`${API_URL}/engineers`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
-        // Don't set Content-Type - let browser set it with boundary
       },
       body: formData
     });
     
-    // Check if response is ok
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
         handleAuthError();
         throw { error: 'Session expired. Please login again.' };
       }
       
-      // Try to parse error response
       const errorData = await response.json().catch(() => ({ error: 'Failed to create engineer' }));
       throw errorData;
     }
     
     return await response.json();
   } catch (error) {
-    // If it's already our formatted error, just throw it
     if (error.error) {
       throw error;
     }
-    // Otherwise format it
     throw { error: error.message || 'Failed to create engineer' };
   }
 };
@@ -166,6 +195,16 @@ export const updateEngineer = async (id, engineerData) => {
     
     if (engineerData.alternatePhone) {
       formData.append('alternatePhone', engineerData.alternatePhone);
+    }
+
+    // Add username if provided
+    if (engineerData.username) {
+      formData.append('username', engineerData.username);
+    }
+
+    // Add password if provided (only if user wants to update it)
+    if (engineerData.password) {
+      formData.append('password', engineerData.password);
     }
     
     if (engineerData.profileImage && typeof engineerData.profileImage !== 'string') {
@@ -200,6 +239,7 @@ export const deleteEngineer = async (id) => {
 };
 
 export default {
+  loginEngineer,
   getAllEngineers,
   getEngineerById,
   createEngineer,
