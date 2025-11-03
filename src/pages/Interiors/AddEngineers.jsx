@@ -44,6 +44,8 @@ const createEngineer = async (engineerData) => {
   formData.append('alternatePhone', engineerData.alternatePhone)
   formData.append('empId', engineerData.empId)
   formData.append('address', engineerData.address)
+  formData.append('username', engineerData.username) // ✅ ADDED
+  formData.append('password', engineerData.password) // ✅ ADDED
   if (engineerData.profileImage) {
     formData.append('profileImage', engineerData.profileImage)
   }
@@ -76,6 +78,10 @@ const updateEngineer = async (id, engineerData) => {
   formData.append('alternatePhone', engineerData.alternatePhone)
   formData.append('empId', engineerData.empId)
   formData.append('address', engineerData.address)
+  formData.append('username', engineerData.username) // ✅ ADDED
+  if (engineerData.password) { // ✅ Only send if provided
+    formData.append('password', engineerData.password)
+  }
   if (engineerData.profileImage) {
     formData.append('profileImage', engineerData.profileImage)
   }
@@ -205,26 +211,34 @@ const AddEngineers = () => {
   }
 
   const handleAddEngineer = async (engineerData) => {
-    setIsSubmitting(true)
+  try {
+    setIsSubmitting(true);
     
-    try {
-      const response = await createEngineer(engineerData)
-      
-      if (response.success) {
-        await fetchEngineers()
-        setShowAddModal(false)
-        alert('Engineer added successfully!')
-        return true
-      }
-      return false
-    } catch (error) {
-      console.error('Error creating engineer:', error)
-      alert(error.error || 'Failed to add engineer')
-      return false
-    } finally {
-      setIsSubmitting(false)
+    // ✅ LOG WHAT'S BEING PASSED
+    console.log('=== PARENT COMPONENT ===');
+    console.log('Submitting engineer data:', {
+      ...engineerData,
+      password: engineerData.password ? '***' : 'MISSING'
+    });
+    
+    const response = await createEngineer(engineerData);
+    
+    if (response.success) {
+      // Success handling
+      setShowAddModal(false);
+      fetchEngineers(); // Refresh list
+      toast.success('Engineer added successfully');
+      return true;
     }
+    return false;
+  } catch (error) {
+    console.error('❌ Add engineer error:', error);
+    toast.error(error.error || 'Failed to add engineer');
+    return false;
+  } finally {
+    setIsSubmitting(false);
   }
+};
 
   const handleUpdateEngineer = async (id, engineerData) => {
     setIsSubmitting(true)

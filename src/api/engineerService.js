@@ -121,7 +121,8 @@ export const getEngineerById = async (id) => {
   }
 };
 
-// Create engineer
+// Update this function in src/services/engineerService.js
+
 export const createEngineer = async (engineerData) => {
   try {
     // Check token expiry first
@@ -132,29 +133,55 @@ export const createEngineer = async (engineerData) => {
 
     const token = getAuthToken();
     
+    // ✅ CRITICAL: Log the incoming data
+    console.log('=== CREATE ENGINEER SERVICE ===');
+    console.log('Received engineerData:', {
+      name: engineerData.name,
+      phone: engineerData.phone,
+      alternatePhone: engineerData.alternatePhone,
+      empId: engineerData.empId,
+      address: engineerData.address,
+      username: engineerData.username,
+      password: engineerData.password ? '***PROVIDED***' : '***MISSING***',
+      hasProfileImage: !!engineerData.profileImage
+    });
+    
+    // ✅ VALIDATE BEFORE CREATING FORMDATA
+    if (!engineerData.username || !engineerData.password) {
+      console.error('❌ VALIDATION FAILED: Missing credentials in service');
+      throw { error: 'Username and password are required' };
+    }
+    
     const formData = new FormData();
-    formData.append('name', engineerData.name);
-    formData.append('phone', engineerData.phone);
+    
+    // ✅ ADD ALL REQUIRED FIELDS EXPLICITLY
+    formData.append('name', engineerData.name || '');
+    formData.append('phone', engineerData.phone || '');
     formData.append('alternatePhone', engineerData.alternatePhone || '');
-    formData.append('empId', engineerData.empId);
-    formData.append('address', engineerData.address);
+    formData.append('empId', engineerData.empId || '');
+    formData.append('address', engineerData.address || '');
+    formData.append('username', engineerData.username || '');
+    formData.append('password', engineerData.password || '');
     
-    // Add username and password if provided
-    if (engineerData.username) {
-      formData.append('username', engineerData.username);
-    }
-    if (engineerData.password) {
-      formData.append('password', engineerData.password);
-    }
-    
+    // ✅ ADD PROFILE IMAGE IF EXISTS
     if (engineerData.profileImage) {
       formData.append('profileImage', engineerData.profileImage);
     }
+    
+    // ✅ VERIFY FORMDATA CONTENTS
+    console.log('=== FORMDATA VERIFICATION ===');
+    const formDataEntries = {};
+    for (let [key, value] of formData.entries()) {
+      formDataEntries[key] = key === 'password' ? '***' : (value instanceof File ? `File: ${value.name}` : value);
+    }
+    console.log('FormData contents:', formDataEntries);
+    console.log('================================');
     
     const response = await fetch(`${API_URL}/engineers`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
+        // ✅ DON'T SET Content-Type - browser will set it with boundary for FormData
       },
       body: formData
     });
@@ -166,11 +193,15 @@ export const createEngineer = async (engineerData) => {
       }
       
       const errorData = await response.json().catch(() => ({ error: 'Failed to create engineer' }));
+      console.error('❌ Server error response:', errorData);
       throw errorData;
     }
     
-    return await response.json();
+    const result = await response.json();
+    console.log('✅ Engineer created successfully:', result);
+    return result;
   } catch (error) {
+    console.error('❌ Create engineer error:', error);
     if (error.error) {
       throw error;
     }
