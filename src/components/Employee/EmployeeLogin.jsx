@@ -24,17 +24,24 @@ export default function EmployeeLogin() {
     setLoading(true);
 
     try {
+      console.log('🔐 Attempting engineer login...');
       const response = await loginEngineer(username, password);
       
+      console.log('✅ Login response:', response);
+      
       if (response.success) {
-        // Store engineer data in localStorage
-        localStorage.setItem('engineerData', JSON.stringify(response.engineer));
+        // Store token and engineer data
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('engineer', JSON.stringify(response.engineer));
+        
+        console.log('✅ Engineer logged in:', response.engineer.name);
+        console.log('✅ Token stored, redirecting to dashboard...');
         
         // Redirect to engineer dashboard
         navigate('/employee-dashboard');
       }
     } catch (err) {
-      console.error('Login error:', err);
+      console.error('❌ Login error:', err);
       setError(err.error || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);

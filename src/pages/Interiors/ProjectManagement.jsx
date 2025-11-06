@@ -34,10 +34,22 @@ const ProjectManagement = () => {
     description: ''
   });
 
-  // Load projects on component mount
-  useEffect(() => {
-    loadProjects();
-  }, []);
+  // At the top of ProjectManagement.jsx
+useEffect(() => {
+  let mounted = true;
+  
+  const fetchData = async () => {
+    if (mounted) {
+      await loadProjects();
+    }
+  };
+  
+  fetchData();
+  
+  return () => {
+    mounted = false;
+  };
+}, []); // Empty dependency array
 
 const handleStatusChangeInline = async (projectId, newStatus) => {
   try {
@@ -65,7 +77,14 @@ const handleStatusChangeInline = async (projectId, newStatus) => {
   try {
     setLoading(true);
     setError(null);
+    
+    // ✅ Add timestamp to prevent caching
+    console.log('🔄 Fetching projects at:', new Date().toISOString());
+    
     const data = await projectAPI.getProjects();
+    
+    console.log('📦 Received projects from API:', data.projects.length);
+    console.log('📋 Projects:', data.projects);
     
     // Transform backend data to match frontend format
     const transformedProjects = data.projects.map(project => ({
@@ -81,7 +100,6 @@ const handleStatusChangeInline = async (projectId, newStatus) => {
       startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
       endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
       location: project.location || '',
-      // Fix: Use assignedEngineer instead of assignments
       team: project.assignedEngineer ? [project.assignedEngineer.name] : [],
       assignedEmployee: project.assignedEngineer ? project.assignedEngineer.id.toString() : '',
       assignedEngineerName: project.assignedEngineer ? project.assignedEngineer.name : '',
@@ -93,12 +111,13 @@ const handleStatusChangeInline = async (projectId, newStatus) => {
       description: project.description || ''
     }));
     
+    console.log('✅ Setting projects state with:', transformedProjects.length, 'projects');
     setProjects(transformedProjects);
+    
   } catch (err) {
     console.error('Failed to load projects:', err);
     setError(err.error || 'Failed to load projects');
     
-    // Handle auth errors
     if (err.status === 403 || err.error === 'Invalid or expired token') {
       localStorage.removeItem('authToken');
       window.location.href = '/login';
@@ -193,35 +212,41 @@ const handleStatusChangeInline = async (projectId, newStatus) => {
   });
 
   const handleCreateProject = async (file) => {
-    if (!newProject.name || !newProject.projectId || !newProject.client || !newProject.location || !newProject.assignedEmployee) {
-      throw new Error('Please fill in all required fields (Name, ID, Client, Location, and Site Engineer)');
-    }
+  if (!newProject.name || !newProject.projectId || !newProject.client || !newProject.location || !newProject.assignedEmployee) {
+    throw new Error('Please fill in all required fields (Name, ID, Client, Location, and Site Engineer)');
+  }
 
-    try {
-      const result = await projectAPI.createProject(newProject, file);
-      
-      // Reload projects to get the latest data
-      await loadProjects();
-      
-      setShowNewProjectModal(false);
-      setNewProject({
-        name: '',
-        projectId: '',
-        client: '',
-        type: 'Residential',
-        budget: '',
-        startDate: '',
-        endDate: '',
-        location: '',
-        assignedEmployee: '',
-        description: ''
-      });
-      
-      alert('Project created successfully!');
-    } catch (err) {
-      throw err;
-    }
-  };
+  try {
+    console.log('🚀 Starting project creation:', newProject.projectId);
+    
+    const result = await projectAPI.createProject(newProject, file);
+    console.log('✅ Project created in DB:', result);
+    
+    console.log('🔄 Reloading projects list...');
+    await loadProjects();
+    console.log('✅ Projects reloaded');
+    
+    setShowNewProjectModal(false);
+    setNewProject({
+      name: '',
+      projectId: '',
+      client: '',
+      type: 'Residential',
+      budget: '',
+      startDate: '',
+      endDate: '',
+      location: '',
+      assignedEmployee: '',
+      description: ''
+    });
+    
+    alert('Project created successfully!');
+  } catch (err) {
+    console.error('❌ Create project failed:', err);
+    alert(`Failed to create project: ${err.message || err.error || 'Unknown error'}`);
+    throw err; // Re-throw so the modal can handle it
+  }
+};
 
 const handleEditProject = (project) => {
   // Transform project data for editing - keep frontend status format
@@ -263,30 +288,29 @@ const handleEditProject = (project) => {
 };
 
   const handleDeleteProject = async (projectId) => {
-    if (!window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-      return;
-    }
+  if (!window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+    return;
+  }
 
-    try {
-      // Find the project to get its database ID
-      const project = projects.find(p => p.id === projectId);
-      if (!project) return;
+  try {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
 
-      await projectAPI.deleteProject(project.dbId);
-      
-      // Remove from local state
-      setProjects(projects.filter(p => p.id !== projectId));
-      
-      if (selectedProject && selectedProject.id === projectId) {
-        setSelectedProject(null);
-      }
-      
-      alert('Project deleted successfully!');
-    } catch (err) {
-      console.error('Failed to delete project:', err);
-      alert(err.error || 'Failed to delete project');
+    await projectAPI.deleteProject(project.dbId);
+    
+    // ✅ Reload from database instead of just filtering local state
+    await loadProjects();
+    
+    if (selectedProject && selectedProject.id === projectId) {
+      setSelectedProject(null);
     }
-  };
+    
+    alert('Project deleted successfully!');
+  } catch (err) {
+    console.error('Failed to delete project:', err);
+    alert(err.error || 'Failed to delete project');
+  }
+};
 
   if (loading) {
     return (

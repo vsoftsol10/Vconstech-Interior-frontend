@@ -604,22 +604,30 @@ const ProjectFormModal = ({
           </div>
         </div>
 
-        <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row justify-end gap-3 sticky bottom-0 bg-white">
-          <button
-            onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:bg-blue-400 disabled:cursor-not-allowed"
-            disabled={loading || (employees.length === 0 && !project.id)}
-          >
-            {loading ? "Saving..." : submitLabel}
-          </button>
-        </div>
+      <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row justify-end gap-3 sticky bottom-0 bg-white">
+  <button
+    onClick={onClose}
+    className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+    disabled={loading}
+  >
+    Cancel
+  </button>
+  <button
+    onClick={handleSubmit}
+    className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+    disabled={loading || (employees.length === 0 && !project.id)}
+    type="button"  // ✅ Prevent form submission on Enter key
+  >
+    {loading ? (
+      <>
+        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+        <span>Saving...</span>
+      </>
+    ) : (
+      submitLabel
+    )}
+  </button>
+</div>
       </div>
     </div>
   );

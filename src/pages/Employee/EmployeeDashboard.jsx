@@ -1,38 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, FileText, Package, AlertCircle, Clock, CheckCircle, Plus, Upload, FolderOpen, AlertTriangle, X } from 'lucide-react';
 import EmployeeNavbar from '../../components/Employee/EmployeeNavbar';
 
 const EmployeeDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [employeeName, setEmployeeName] = useState('Loading...');
+  const [assignedProjectsCount, setAssignedProjectsCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   
-  // Sample data
-  const employeeName = "Rajesh Kumar";
   const currentDate = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
+  // Fetch employee data and assigned projects count
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No token found');
+          return;
+        }
+
+        // Fetch employee profile data
+        const profileResponse = await fetch('http://localhost:5000/api/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          setEmployeeName(profileData.user.name || 'Employee');
+          
+          // Fetch all projects for the company
+          const projectsResponse = await fetch('http://localhost:5000/api/projects', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (projectsResponse.ok) {
+            const projectsData = await projectsResponse.json();
+            
+            // Filter projects where this employee is assigned
+            const userId = profileData.user.id;
+            const assignedProjects = projectsData.projects.filter(project => 
+              project.assignedEmployees && 
+              project.assignedEmployees.some(emp => emp.id === userId)
+            );
+            
+            setAssignedProjectsCount(assignedProjects.length);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching employee data:', error);
+        setEmployeeName('Employee');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, []);
+
   const kpiData = [
-    { icon: FolderOpen, label: 'Active Projects', value: '8', color: 'bg-blue-500', trend: '+2 this month' },
+    { icon: FolderOpen, label: 'Active Projects', value: loading ? '...' : assignedProjectsCount.toString(), color: 'bg-blue-500', trend: '+2 this month' },
     { icon: AlertCircle, label: 'Notifications', value: '7', color: 'bg-purple-500', trend: '2 new' },
   ];
 
   const projects = [
     { id: 1, name: 'Residential Complex - Phase 2', client: 'ABC Builders', progress: 75, stage: 'Electrical', status: 'Active', deadline: '2025-11-15' },
     { id: 2, name: 'Commercial Tower', client: 'XYZ Developers', progress: 45, stage: 'Carpentry', status: 'Active', deadline: '2025-12-20' },
-     ];
+  ];
 
   const materialRequests = [
     { id: 1, material: 'Cement - 500 bags', project: 'Residential Complex', date: '2025-10-20', status: 'Pending' },
     { id: 2, material: 'Steel Rods - 2 tons', project: 'Commercial Tower', date: '2025-10-19', status: 'Approved' },
-    
   ];
 
   const recentFiles = [
     { name: 'Floor_Plan_Rev3.pdf', project: 'Residential Complex', uploadedBy: 'PM Sharma', date: '2025-10-22', type: 'PDF' },
     { name: 'Electrical_Layout.dwg', project: 'Commercial Tower', uploadedBy: 'Eng. Patel', date: '2025-10-21', type: 'DWG' },
     { name: 'Site_Photo_1.jpg', project: 'Villa Project', uploadedBy: 'Rajesh Kumar', date: '2025-10-20', type: 'Image' },
-   
   ];
-
-  
 
   const notifications = [
     { type: 'approval', message: 'Steel Rods request approved for Commercial Tower', time: '2 hours ago' },
@@ -67,7 +116,7 @@ const EmployeeDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <EmployeeNavbar/>
       {/* Top Bar */}
-      <div className=" mt-26 ">
+      <div className="mt-26">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div>
@@ -75,9 +124,8 @@ const EmployeeDashboard = () => {
               <p className="text-sm text-gray-600 mt-1">{currentDate}</p>
             </div>
             <div className="flex items-center gap-4">
-             
               <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-                RK
+                {employeeName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
               </div>
             </div>
           </div>
@@ -90,7 +138,7 @@ const EmployeeDashboard = () => {
           {kpiData.map((kpi, index) => (
             <div key={index} className="bg-white rounded-lg text-center shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer">
               <div className="flex items-start justify-center">
-                <div className={`${kpi.color} p-3 rounded-lg `}>
+                <div className={`${kpi.color} p-3 rounded-lg`}>
                   <kpi.icon className="w-6 h-6 text-white" />
                 </div>
               </div>
@@ -156,8 +204,8 @@ const EmployeeDashboard = () => {
                 <h2 className="text-lg font-bold text-gray-900">Material Request Insights</h2>
                 <div className="flex gap-4 text-sm">
                   <span className="text-green-600 font-medium">✓ 1 Approved</span>
-                  <span className="text-orange-600 font-medium flex  gap-1"><AlertCircle size={15} className='mt-1'/> 1 Pending</span>
-                  <span className="text-red-600 font-medium flex  gap-1"><X size={15} className='mt-1'/> 0 Rejected</span>
+                  <span className="text-orange-600 font-medium flex gap-1"><AlertCircle size={15} className='mt-1'/> 1 Pending</span>
+                  <span className="text-red-600 font-medium flex gap-1"><X size={15} className='mt-1'/> 0 Rejected</span>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -218,9 +266,6 @@ const EmployeeDashboard = () => {
 
           {/* Right Column - 1/3 width */}
           <div className="space-y-6">
-
-
-
             {/* Notifications */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Notifications</h2>
