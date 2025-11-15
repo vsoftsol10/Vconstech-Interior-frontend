@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, FileText, Package, AlertCircle, Clock, CheckCircle, Plus, Upload, FolderOpen, AlertTriangle, X } from 'lucide-react';
+import  { useState, useEffect } from 'react';
+import {  FileText,  AlertCircle,   Plus, Upload, FolderOpen,  X } from 'lucide-react';
 import EmployeeNavbar from '../../components/Employee/EmployeeNavbar';
 
 const EmployeeDashboard = () => {
@@ -10,7 +10,6 @@ const EmployeeDashboard = () => {
   
   const currentDate = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
-  // Fetch employee data and assigned projects count
   useEffect(() => {
     const fetchEmployeeData = async () => {
       try {
@@ -29,6 +28,8 @@ const EmployeeDashboard = () => {
 
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
+          console.log('Profile data:', profileData); // Debug log
+          
           setEmployeeName(profileData.user.name || 'Employee');
           
           // Fetch all projects for the company
@@ -40,14 +41,18 @@ const EmployeeDashboard = () => {
 
           if (projectsResponse.ok) {
             const projectsData = await projectsResponse.json();
+            console.log('Projects data:', projectsData); // Debug log
             
-            // Filter projects where this employee is assigned
-            const userId = profileData.user.id;
+            // ✅ FIXED: Filter projects where this ENGINEER is assigned
+            // The token contains engineer ID for logged-in engineers
+            const engineerId = profileData.user.id; // This is the engineer ID from token
+            
             const assignedProjects = projectsData.projects.filter(project => 
-              project.assignedEmployees && 
-              project.assignedEmployees.some(emp => emp.id === userId)
+              project.assignedEngineer && 
+              project.assignedEngineer.id === engineerId
             );
             
+            console.log('Assigned projects:', assignedProjects); // Debug log
             setAssignedProjectsCount(assignedProjects.length);
           }
         }
@@ -60,7 +65,7 @@ const EmployeeDashboard = () => {
     };
 
     fetchEmployeeData();
-  }, []);
+  }, []); 
 
   const kpiData = [
     { icon: FolderOpen, label: 'Active Projects', value: loading ? '...' : assignedProjectsCount.toString(), color: 'bg-blue-500', trend: '+2 this month' },
