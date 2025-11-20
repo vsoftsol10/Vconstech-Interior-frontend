@@ -50,8 +50,8 @@ const Login = () => {
 
       if (response.ok) {
         setSuccess('Login successful!');
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+       localStorage.setItem('token', data.token);  // ← Change 'authToken' to 'token'
+localStorage.setItem('user', JSON.stringify(data.user));
 
         setTimeout(() => {
           window.location.href = '/dashboard';
@@ -115,8 +115,8 @@ const Login = () => {
 
       if (response.ok) {
         setSuccess('Login successful!');
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+ localStorage.setItem('token', data.token);  // ← Change 'authToken' to 'token'
+localStorage.setItem('user', JSON.stringify(data.user));
 
         setSignupData({
           name: '',

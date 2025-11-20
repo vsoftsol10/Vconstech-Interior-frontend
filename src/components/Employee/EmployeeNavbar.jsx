@@ -13,10 +13,19 @@ const EmployeeNavbar = () => {
   };
 
   const confirmLogout = () => {
-    setShowLogoutModal(false);
-    navigate("/")
-    // Add your actual logout logic here
-  };
+  // Clear all authentication data
+  localStorage.removeItem('token');
+  localStorage.removeItem('user'); // if you store user data separately
+  
+  // Close modal
+  setShowLogoutModal(false);
+  
+  // Navigate to login/home
+  navigate("/");
+  
+  // Optional: Force reload to clear any cached state
+  window.location.reload();
+};
 
   const cancelLogout = () => {
     setShowLogoutModal(false);

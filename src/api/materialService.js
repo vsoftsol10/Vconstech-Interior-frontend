@@ -100,6 +100,23 @@ export const projectMaterialAPI = {
 
 // ============ MATERIAL REQUEST APIs ============
 export const materialRequestAPI = {
+  // Get ALL requests (Admin only) - ADD THIS
+  getAll: async () => {
+    const response = await api.get('/material-requests');
+    return response.data;
+  },
+
+  // Get my requests (Employee)
+  getMyRequests: async () => {
+    const response = await api.get('/material-requests/my-requests');
+    return response.data;
+  },
+
+  // Get pending requests (Admin only)
+  getPending: async () => {
+    const response = await api.get('/material-requests/pending');
+    return response.data;
+  },
   // Get my requests (Employee)
   getMyRequests: async () => {
     const response = await api.get('/material-requests/my-requests');
@@ -119,15 +136,37 @@ export const materialRequestAPI = {
   },
 
   // Approve request (Admin only)
-  approve: async (id, approvalNotes) => {
-    const response = await api.put(`/material-requests/${id}/approve`, { approvalNotes });
-    return response.data;
+  approve: async (id, approvalNotes = '') => {
+    try {
+      const response = await api.put(`/material-requests/${id}/approve`, {
+        approvalNotes: approvalNotes || 'Request approved',
+        // Add reviewedBy if your backend expects it
+        // reviewedBy: getCurrentUserId(), // You may need to get current admin/reviewer ID
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Approve API Error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 
-  // Reject request (Admin only)
+  // ✅ FIXED: Reject request (Admin only)
   reject: async (id, rejectionReason) => {
-    const response = await api.put(`/material-requests/${id}/reject`, { rejectionReason });
-    return response.data;
+    try {
+      if (!rejectionReason || rejectionReason.trim() === '') {
+        throw new Error('Rejection reason is required');
+      }
+      
+      const response = await api.put(`/material-requests/${id}/reject`, {
+        rejectionReason: rejectionReason.trim(),
+        // Add reviewedBy if your backend expects it
+        // reviewedBy: getCurrentUserId(),
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Reject API Error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 };
 

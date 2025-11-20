@@ -174,6 +174,9 @@ const EmployeeMaterialManagement = () => {
     try {
       setLoading(true);
       
+      console.log('🔍 Current requestType:', requestType);
+      console.log('🔍 Current newMaterial:', newMaterial);
+      
       const requestData = {
         name: newMaterial.name,
         category: newMaterial.category,
@@ -181,12 +184,14 @@ const EmployeeMaterialManagement = () => {
         defaultRate: parseFloat(newMaterial.defaultRate),
         vendor: newMaterial.vendor || null,
         description: newMaterial.description || null,
-        type: requestType,
+        type: requestType, // This should be 'GLOBAL' or 'PROJECT'
         projectId: requestType === 'PROJECT' ? parseInt(newMaterial.projectId) : null,
         quantity: requestType === 'PROJECT' ? parseFloat(newMaterial.quantity) : null
       };
 
-      await materialRequestAPI.create(requestData);
+      console.log('📤 Submitting request:', requestData);
+      const response = await materialRequestAPI.create(requestData);
+      console.log('✅ Request created:', response);
       
       // Refresh data
       await fetchMaterialRequests();
@@ -207,7 +212,9 @@ const EmployeeMaterialManagement = () => {
       
       alert('Material request submitted successfully! You will be notified once it is reviewed.');
     } catch (err) {
-      console.error('Failed to submit request:', err);
+      console.error('❌ Failed to submit request:', err);
+      console.error('❌ Error response:', err.response?.data);
+      console.error('❌ Error status:', err.response?.status);
       alert(err.response?.data?.error || 'Failed to submit material request');
     } finally {
       setLoading(false);
@@ -330,7 +337,7 @@ const EmployeeMaterialManagement = () => {
       <EmployeeNavbar />
       
       {/* Header */}
-      <div className="bg-white border-b mt-16 border-gray-200 px-6 py-4">
+      <div className="bg-white border-b mt-26 border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Material Management System</h1>
@@ -527,7 +534,7 @@ const EmployeeMaterialManagement = () => {
         <EmployeeMaterialForm
           material={newMaterial}
           onChange={setNewMaterial}
-          categories={categories.filter(c => c !== 'All')}
+          categories={categories.length > 1 ? categories.filter(c => c !== 'All') : ['Paint', 'Wood', 'Flooring', 'Electrical', 'Fabric', 'Hardware', 'Plumbing']}
           isProjectSpecific={requestType === 'PROJECT'}
           projects={projects}
         />

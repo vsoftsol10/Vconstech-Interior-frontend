@@ -1,7 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, Search, X, Package, TrendingUp, AlertCircle, DollarSign } from 'lucide-react';
 import DashboardTab from '../../components/MaterialManagement/DashboardTab';
-import MaterialsTab from '../../components/MaterialManagement/MaterialsTab';
 import ProjectsTab from '../../components/MaterialManagement/ProjectsTab';
 import MaterialForm from '../../components/MaterialManagement/MaterialForm';
 import ModalMaterial from '../../components/MaterialManagement/ModalMaterial';

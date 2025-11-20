@@ -12,10 +12,17 @@ const Navbar = () => {
   };
 
   const confirmLogout = () => {
-    setShowLogoutModal(false);
-    navigate("/")
-    // Add your actual logout logic here
-  };
+  // Clear localStorage
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  
+  // Close modal
+  setShowLogoutModal(false);
+  
+  // Navigate and reload
+  navigate("/");
+  window.location.reload();
+};
 
   const cancelLogout = () => {
     setShowLogoutModal(false);

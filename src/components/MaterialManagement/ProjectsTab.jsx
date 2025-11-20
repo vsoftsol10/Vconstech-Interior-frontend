@@ -1,39 +1,122 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { materialRequestAPI, projectMaterialAPI } from '../../api/materialService';
+import { projectAPI } from "../../api/projectAPI";
 
 // Projects Tab Component
-const ProjectsTab = ({
-  projects,
-  selectedProject,
-  setSelectedProject,
-  projectMaterials,
-  materialRequests,
-  onAddProjectMaterial,
-  onUpdateMaterialStatus,
-}) => {
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-  const [showRejectModal, setShowRejectModal] = React.useState(false);
-  const [rejectReason, setRejectReason] = React.useState("");
-  const [selectedRequestId, setSelectedRequestId] = React.useState(null);
-  const dropdownRef = React.useRef(null);
+const ProjectsTab = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [selectedRequestId, setSelectedRequestId] = useState(null);
+  const dropdownRef = useRef(null);
+  const [requestStatusFilter, setRequestStatusFilter] = useState("All");
   
   // Add Material Modal States
-  const [showAddMaterialModal, setShowAddMaterialModal] = React.useState(false);
-  const [newMaterial, setNewMaterial] = React.useState({
+  const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
+  const [newMaterial, setNewMaterial] = useState({
     materialId: "",
     quantity: "",
   });
   
   // Filter State
-  const [statusFilter, setStatusFilter] = React.useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
   
   // Status Update Modal States
-  const [showStatusModal, setShowStatusModal] = React.useState(false);
-  const [selectedMaterialIndex, setSelectedMaterialIndex] = React.useState(null);
-  const [newStatus, setNewStatus] = React.useState("");
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedMaterialIndex, setSelectedMaterialIndex] = useState(null);
+  const [newStatus, setNewStatus] =useState("");
+
+  // Data States
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [projectMaterials, setProjectMaterials] = useState([]);
+  const [materialRequests, setMaterialRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+const filteredMaterialRequests = requestStatusFilter === "All" 
+  ? materialRequests 
+  : materialRequests.filter(req => req.status === requestStatusFilter);
+  // Fetch projects on mount
+  useEffect(() => {
+    fetchProjects();
+    fetchMaterialRequests();
+  }, []);
+
+  // Fetch project materials when project is selected
+  React.useEffect(() => {
+    if (selectedProject) {
+      fetchProjectMaterials(selectedProject);
+    }
+  }, [selectedProject]);
+
+  const fetchProjects = async () => {
+  try {
+    setLoading(true);
+    const data = await projectAPI.getProjects(); // Use getProjects() not getAll()
+    
+    if (data.success) {
+      setProjects(data.projects || []);
+      if (data.projects?.length > 0) {
+        setSelectedProject(data.projects[0].id);
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching projects:', err);
+    setError('Failed to load projects');
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const fetchProjectMaterials = async (projectId) => {
+    try {
+      setLoading(true);
+      const data = await projectMaterialAPI.getByProject(projectId);
+      if (data.success) {
+        setProjectMaterials(data.projectMaterials || []);
+      }
+    } catch (err) {
+      console.error('Error fetching project materials:', err);
+      setError('Failed to load project materials');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+// Replace your fetchMaterialRequests function with this:
+
+// Replace your fetchMaterialRequests function in ProjectsTab.jsx
+
+const fetchMaterialRequests = async () => {
+  try {
+    setLoading(true);
+    console.log('Fetching all material requests...');
+    
+    // ✅ Use getAll() to fetch ALL requests (not just pending)
+    const data = await materialRequestAPI.getAll();
+    
+    console.log('Received data:', data);
+    
+    if (data.success) {
+      console.log('Material requests count:', data.count);
+      console.log('Material requests:', data.requests);
+      setMaterialRequests(data.requests || []);
+    } else {
+      console.error('Failed to fetch requests:', data.error);
+      setError(data.error || 'Failed to load material requests');
+    }
+  } catch (err) {
+    console.error('Error fetching material requests:', err);
+    console.error('Error details:', err.response?.data || err.message);
+    setError('Failed to load material requests');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Close dropdown when clicking outside
-  React.useEffect(() => {
+ useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
@@ -63,30 +146,69 @@ const ProjectsTab = ({
     setIsDropdownOpen(false);
   };
   
-  const handleAddMaterial = () => {
+  const handleAddMaterial = async () => {
     if (newMaterial.materialId && newMaterial.quantity && selectedProject) {
-      if (onAddProjectMaterial) {
-        onAddProjectMaterial(selectedProject, newMaterial.materialId, parseFloat(newMaterial.quantity));
+      try {
+        await projectMaterialAPI.add({
+          projectId: selectedProject,
+          materialId: parseInt(newMaterial.materialId),
+          assigned: parseFloat(newMaterial.quantity)
+        });
+        
+        setShowAddMaterialModal(false);
+        setNewMaterial({ materialId: "", quantity: "" });
+        fetchProjectMaterials(selectedProject);
+      } catch (err) {
+        console.error('Error adding material:', err);
+        alert('Failed to add material');
       }
-      setShowAddMaterialModal(false);
-      setNewMaterial({ materialId: "", quantity: "" });
     }
   };
 
-  const handleRejectClick = (requestId) => {
-    setSelectedRequestId(requestId);
-    setShowRejectModal(true);
+  const handleAcceptRequest = async (requestId) => {
+    try {
+    const result = await materialRequestAPI.approve(requestId, 'Request approved');
+    console.log('Approve result:', result);
+    fetchMaterialRequests();
+    if (selectedProject) {
+      fetchProjectMaterials(selectedProject);
+    }
+  } catch (err) {
+    console.error('Error accepting request:', err);
+    console.error('Error response:', err.response?.data); // ✅ Log the actual error
+    alert(`Failed to accept request: ${err.response?.data?.error || err.message}`);
+  }
   };
 
-  const handleRejectConfirm = () => {
-    if (rejectReason.trim()) {
-      const request = materialRequests.find(r => r.id === selectedRequestId);
-      if (request && request.onReject) {
-        request.onReject(selectedRequestId, rejectReason);
-      }
+  const handleRejectClick = async () => {
+    if (rejectReason.trim() && selectedRequestId) {
+    try {
+      const result = await materialRequestAPI.reject(selectedRequestId, rejectReason);
+      console.log('Reject result:', result);
       setShowRejectModal(false);
       setRejectReason("");
       setSelectedRequestId(null);
+      fetchMaterialRequests();
+    } catch (err) {
+      console.error('Error rejecting request:', err);
+      console.error('Error response:', err.response?.data); // ✅ Log the actual error
+      alert(`Failed to reject request: ${err.response?.data?.error || err.message}`);
+    }
+  }
+  };
+
+  const handleRejectConfirm = async () => {
+    if (rejectReason.trim() && selectedRequestId) {
+      try {
+        await materialRequestAPI.reject(selectedRequestId, rejectReason);
+        setShowRejectModal(false);
+        setRejectReason("");
+        setSelectedRequestId(null);
+        fetchMaterialRequests();
+      } catch (err) {
+        console.error('Error rejecting request:', err);
+        alert('Failed to reject request');
+      }
     }
   };
 
@@ -103,12 +225,23 @@ const ProjectsTab = ({
     setShowStatusModal(true);
   };
   
-  const handleStatusUpdateConfirm = () => {
-    if (selectedMaterialIndex !== null && newStatus && onUpdateMaterialStatus) {
-      onUpdateMaterialStatus(selectedMaterialIndex, newStatus);
-      setShowStatusModal(false);
-      setSelectedMaterialIndex(null);
-      setNewStatus("");
+  const handleStatusUpdateConfirm = async () => {
+    if (selectedMaterialIndex !== null && newStatus) {
+      try {
+        const material = projectMaterials[selectedMaterialIndex];
+        await projectMaterialAPI.update(material.id, { status: newStatus });
+        
+        setShowStatusModal(false);
+        setSelectedMaterialIndex(null);
+        setNewStatus("");
+        
+        if (selectedProject) {
+          fetchProjectMaterials(selectedProject);
+        }
+      } catch (err) {
+        console.error('Error updating status:', err);
+        alert('Failed to update status');
+      }
     }
   };
   
@@ -120,6 +253,12 @@ const ProjectsTab = ({
 
   return (
     <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
       {/* Top Section */}
       <div className="bg-white rounded-lg md:rounded-xl shadow p-3 sm:p-4 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
@@ -206,7 +345,7 @@ const ProjectsTab = ({
           
           {/* Status Filter */}
           <div className="flex gap-2 flex-wrap">
-            {["All", "Active", "Completed", "On Hold"].map((status) => (
+            {["All", "ACTIVE", "COMPLETED", "NOT_USED"].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
@@ -216,7 +355,7 @@ const ProjectsTab = ({
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                {status}
+                {status === "NOT_USED" ? "Not Used" : status.charAt(0) + status.slice(1).toLowerCase()}
               </button>
             ))}
           </div>
@@ -230,6 +369,7 @@ const ProjectsTab = ({
                 {[
                   "Project Name",
                   "Material",
+                  "Assigned",
                   "Used",
                   "Cost",
                   "Status",
@@ -245,10 +385,16 @@ const ProjectsTab = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProjectMaterials.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm">
+                    Loading...
+                  </td>
+                </tr>
+              ) : filteredProjectMaterials.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="7"
                     className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm"
                   >
                     {statusFilter === "All" ? "No materials allocated yet" : `No ${statusFilter.toLowerCase()} materials found`}
@@ -257,14 +403,17 @@ const ProjectsTab = ({
               ) : (
                 filteredProjectMaterials.map((pm, idx) => (
                   <tr
-                    key={idx}
+                    key={pm.id}
                     className="hover:bg-gray-50 transition-colors duration-200"
                   >
                     <td className="px-4 lg:px-6 py-3 text-gray-900 font-medium text-sm">
-                      {pm.projectName}
+                      {pm.project?.name || 'N/A'}
                     </td>
                     <td className="px-4 lg:px-6 py-3 text-gray-900 text-sm">
-                      {pm.material?.name}
+                      {pm.material?.name || 'N/A'}
+                    </td>
+                    <td className="px-4 lg:px-6 py-3 text-gray-900 whitespace-nowrap text-sm">
+                      {pm.assigned} {pm.material?.unit}
                     </td>
                     <td className="px-4 lg:px-6 py-3 text-gray-900 whitespace-nowrap text-sm">
                       {pm.used} {pm.material?.unit}
@@ -275,16 +424,16 @@ const ProjectsTab = ({
                     <td className="px-4 lg:px-6 py-3">
                       <span
                         className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
-                          pm.status === "Active"
+                          pm.status === "ACTIVE"
                             ? "bg-green-100 text-green-800"
-                            : pm.status === "Completed"
+                            : pm.status === "COMPLETED"
                             ? "bg-blue-100 text-blue-800"
-                            : pm.status === "On Hold"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
+                            : pm.status === "NOT_USED"
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {pm.status}
+                        {pm.status === "NOT_USED" ? "Not Used" : pm.status}
                       </span>
                     </td>
                     <td className="px-4 lg:px-6 py-3">
@@ -304,31 +453,39 @@ const ProjectsTab = ({
 
         {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-gray-200">
-          {filteredProjectMaterials.length === 0 ? (
+          {loading ? (
+            <div className="px-4 py-8 text-center text-gray-500 text-sm">
+              Loading...
+            </div>
+          ) : filteredProjectMaterials.length === 0 ? (
             <div className="px-4 py-8 text-center text-gray-500 text-sm">
               {statusFilter === "All" ? "No materials allocated yet" : `No ${statusFilter.toLowerCase()} materials found`}
             </div>
           ) : (
             filteredProjectMaterials.map((pm, idx) => (
-              <div key={idx} className="p-4 space-y-2.5">
+              <div key={pm.id} className="p-4 space-y-2.5">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 text-sm">{pm.projectName}</div>
-                    <div className="text-gray-600 text-sm mt-0.5">{pm.material?.name}</div>
+                    <div className="font-medium text-gray-900 text-sm">{pm.project?.name || 'N/A'}</div>
+                    <div className="text-gray-600 text-sm mt-0.5">{pm.material?.name || 'N/A'}</div>
                   </div>
                   <span
                     className={`inline-block px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ml-2 flex-shrink-0 ${
-                      pm.status === "Active"
+                      pm.status === "ACTIVE"
                         ? "bg-green-100 text-green-800"
-                        : pm.status === "Completed"
+                        : pm.status === "COMPLETED"
                         ? "bg-blue-100 text-blue-800"
-                        : pm.status === "On Hold"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-gray-100 text-gray-800"
+                        : pm.status === "NOT_USED"
+                        ? "bg-gray-100 text-gray-800"
+                        : "bg-yellow-100 text-yellow-800"
                     }`}
                   >
-                    {pm.status}
+                    {pm.status === "NOT_USED" ? "Not Used" : pm.status}
                   </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Assigned:</span>
+                  <span className="text-gray-900 font-medium">{pm.assigned} {pm.material?.unit}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Used:</span>
@@ -356,6 +513,21 @@ const ProjectsTab = ({
           <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">
             Material Requests
           </h2>
+          <div className="flex gap-2 flex-wrap">
+    {["All", "PENDING", "APPROVED", "REJECTED"].map((status) => (
+      <button
+        key={status}
+        onClick={() => setRequestStatusFilter(status)}
+        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+          requestStatusFilter === status
+            ? "bg-blue-600 text-white"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        }`}
+      >
+        {status.charAt(0) + status.slice(1).toLowerCase()}
+      </button>
+    ))}
+  </div>
         </div>
         
         {/* Desktop Table View */}
@@ -376,7 +548,13 @@ const ProjectsTab = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {materialRequests.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm">
+                    Loading...
+                  </td>
+                </tr>
+              ) : filteredMaterialRequests.length === 0 ? (
                 <tr>
                   <td
                     colSpan="6"
@@ -386,29 +564,29 @@ const ProjectsTab = ({
                   </td>
                 </tr>
               ) : (
-                materialRequests.map((request, idx) => (
+                filteredMaterialRequests.map((request) => (
                   <tr
-                    key={idx}
+                    key={request.id}
                     className="hover:bg-gray-50 transition-colors duration-200"
                   >
                     <td className="px-4 lg:px-6 py-3 text-gray-900 font-medium text-sm">
-                      {request.engineerName}
+                      {request.employee?.name || 'N/A'}
                     </td>
                     <td className="px-4 lg:px-6 py-3 text-gray-900 text-sm">
-                      {request.projectName}
+                      {request.project?.name || request.projectName || 'N/A'}
                     </td>
                     <td className="px-4 lg:px-6 py-3 text-gray-900 text-sm">
-                      {request.materialName}
+                      {request.name}
                     </td>
                     <td className="px-4 lg:px-6 py-3 text-gray-900 whitespace-nowrap text-sm">
-                      {request.quantity} {request.unit}
+                      {request.quantity || 'N/A'} {request.unit}
                     </td>
                     <td className="px-4 lg:px-6 py-3">
                       <span
                         className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
-                          request.status === "Accepted"
+                          request.status === "APPROVED"
                             ? "bg-green-100 text-green-800"
-                            : request.status === "Rejected"
+                            : request.status === "REJECTED"
                             ? "bg-red-100 text-red-800"
                             : "bg-yellow-100 text-yellow-800"
                         }`}
@@ -417,10 +595,10 @@ const ProjectsTab = ({
                       </span>
                     </td>
                     <td className="px-4 lg:px-6 py-3">
-                      {request.status === "Pending" ? (
+                      {request.status === "PENDING" ? (
                         <div className="flex gap-2">
                           <button
-                            onClick={() => request.onAccept && request.onAccept(request.id)}
+                            onClick={() => handleAcceptRequest(request.id)}
                             className="px-3 py-1.5 bg-[#ffbe2a] text-black text-xs font-medium rounded-lg hover:bg-[#e6ab25] transition-colors whitespace-nowrap"
                           >
                             Accept
@@ -447,23 +625,27 @@ const ProjectsTab = ({
 
         {/* Mobile/Tablet Card View */}
         <div className="lg:hidden divide-y divide-gray-200">
-          {materialRequests.length === 0 ? (
+          {loading ? (
+            <div className="px-4 py-8 text-center text-gray-500 text-sm">
+              Loading...
+            </div>
+          ) : filteredMaterialRequests.length === 0 ? (
             <div className="px-4 py-8 text-center text-gray-500 text-sm">
               No material requests yet
             </div>
           ) : (
-            materialRequests.map((request, idx) => (
-              <div key={idx} className="p-4 space-y-3">
+            filteredMaterialRequests.map((request) => (
+              <div key={request.id} className="p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 text-sm">{request.engineerName}</div>
-                    <div className="text-gray-600 text-sm mt-0.5">{request.projectName}</div>
+                    <div className="font-medium text-gray-900 text-sm">{request.employee?.name || 'N/A'}</div>
+                    <div className="text-gray-600 text-sm mt-0.5">{request.project?.name || request.projectName || 'N/A'}</div>
                   </div>
                   <span
                     className={`inline-block px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ml-2 flex-shrink-0 ${
-                      request.status === "Accepted"
+                      request.status === "APPROVED"
                         ? "bg-green-100 text-green-800"
-                        : request.status === "Rejected"
+                        : request.status === "REJECTED"
                         ? "bg-red-100 text-red-800"
                         : "bg-yellow-100 text-yellow-800"
                     }`}
@@ -474,17 +656,17 @@ const ProjectsTab = ({
                 <div className="space-y-1.5 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Material:</span>
-                    <span className="text-gray-900 font-medium">{request.materialName}</span>
+                    <span className="text-gray-900 font-medium">{request.name}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Quantity:</span>
-                    <span className="text-gray-900 font-medium">{request.quantity} {request.unit}</span>
+                    <span className="text-gray-900 font-medium">{request.quantity || 'N/A'} {request.unit}</span>
                   </div>
                 </div>
-                {request.status === "Pending" && (
+                {request.status === "PENDING" && (
                   <div className="flex gap-2 pt-2">
                     <button
-                      onClick={() => request.onAccept && request.onAccept(request.id)}
+                      onClick={() => handleAcceptRequest(request.id)}
                       className="flex-1 px-3 py-2 bg-[#ffbe2a] text-black text-sm font-medium rounded-lg hover:bg-[#e6ab25] transition-colors"
                     >
                       Accept
@@ -558,7 +740,7 @@ const ProjectsTab = ({
                 Select Status
               </label>
               <div className="space-y-2">
-                {["Active", "Completed", "On Hold"].map((status) => (
+                {["ACTIVE", "COMPLETED", "NOT_USED"].map((status) => (
                   <label 
                     key={status} 
                     className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
@@ -571,17 +753,19 @@ const ProjectsTab = ({
                       onChange={(e) => setNewStatus(e.target.value)}
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="ml-3 text-sm text-gray-900">{status}</span>
+                    <span className="ml-3 text-sm text-gray-900">
+                      {status === "NOT_USED" ? "Not Used" : status.charAt(0) + status.slice(1).toLowerCase()}
+                    </span>
                     <span 
                       className={`ml-auto px-2 py-0.5 text-xs font-medium rounded-full ${
-                        status === "Active"
+                        status === "ACTIVE"
                           ? "bg-green-100 text-green-800"
-                          : status === "Completed"
+                          : status === "COMPLETED"
                           ? "bg-blue-100 text-blue-800"
-                          : "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {status}
+                      {status === "NOT_USED" ? "Not Used" : status}
                     </span>
                   </label>
                 ))}
@@ -630,12 +814,12 @@ const ProjectsTab = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 >
                   <option value="">Choose a material...</option>
-                  <option value="mat-001">Cement</option>
-                  <option value="mat-002">Steel Rods</option>
-                  <option value="mat-003">Bitumen</option>
-                  <option value="mat-004">Sand</option>
-                  <option value="mat-005">Gravel</option>
-                  <option value="mat-006">Concrete Mix</option>
+                  <option value="1">Cement</option>
+                  <option value="2">Steel Rods</option>
+                  <option value="3">Bitumen</option>
+                  <option value="4">Sand</option>
+                  <option value="5">Gravel</option>
+                  <option value="6">Concrete Mix</option>
                 </select>
               </div>
               
@@ -681,165 +865,4 @@ const ProjectsTab = ({
   );
 };
 
-// Sample data for demonstration
-const SampleApp = () => {
-  const [selectedProject, setSelectedProject] = React.useState("proj-001");
-  const [projectMaterials, setProjectMaterials] = React.useState([
-    {
-      projectName: "Building A Construction",
-      material: { name: "Cement", unit: "bags", defaultRate: 450 },
-      used: 150,
-      status: "Active",
-    },
-    {
-      projectName: "Building A Construction",
-      material: { name: "Steel Rods", unit: "kg", defaultRate: 65 },
-      used: 2500,
-      status: "Active",
-    },
-    {
-      projectName: "Road Extension Project",
-      material: { name: "Bitumen", unit: "liters", defaultRate: 85 },
-      used: 5000,
-      status: "Active",
-    },
-    {
-      projectName: "Bridge Repair",
-      material: { name: "Concrete Mix", unit: "cubic meters", defaultRate: 3500 },
-      used: 45,
-      status: "Completed",
-    },
-  ]);
-  
-  const [materialRequests, setMaterialRequests] = React.useState([
-    {
-      id: "req-001",
-      engineerName: "Rajesh Kumar",
-      projectName: "Building A Construction",
-      materialName: "Cement",
-      quantity: 50,
-      unit: "bags",
-      status: "Accepted",
-    },
-    {
-      id: "req-002",
-      engineerName: "Priya Sharma",
-      projectName: "Road Extension Project",
-      materialName: "Bitumen",
-      quantity: 1000,
-      unit: "liters",
-      status: "Pending",
-    },
-    {
-      id: "req-003",
-      engineerName: "Amit Patel",
-      projectName: "Building A Construction",
-      materialName: "Steel Rods",
-      quantity: 500,
-      unit: "kg",
-      status: "Accepted",
-    },
-    {
-      id: "req-004",
-      engineerName: "Sneha Reddy",
-      projectName: "Bridge Repair",
-      materialName: "Sand",
-      quantity: 20,
-      unit: "tons",
-      status: "Rejected",
-      rejectionReason: "Insufficient stock available",
-    },
-    {
-      id: "req-005",
-      engineerName: "Vikram Singh",
-      projectName: "Road Extension Project",
-      materialName: "Gravel",
-      quantity: 30,
-      unit: "tons",
-      status: "Pending",
-    },
-  ]);
-
-  const projects = [
-    { id: "proj-001", name: "Building A Construction", status: "Active" },
-    { id: "proj-002", name: "Road Extension Project", status: "Active" },
-    { id: "proj-003", name: "Bridge Repair", status: "Completed" },
-  ];
-
-  // Material catalog for adding new materials
-  const materialCatalog = {
-    "mat-001": { name: "Cement", unit: "bags", defaultRate: 450 },
-    "mat-002": { name: "Steel Rods", unit: "kg", defaultRate: 65 },
-    "mat-003": { name: "Bitumen", unit: "liters", defaultRate: 85 },
-    "mat-004": { name: "Sand", unit: "tons", defaultRate: 1500 },
-    "mat-005": { name: "Gravel", unit: "tons", defaultRate: 1200 },
-    "mat-006": { name: "Concrete Mix", unit: "cubic meters", defaultRate: 3500 },
-  };
-
-  // Handle adding material to project
-  const handleAddProjectMaterial = (projectId, materialId, quantity) => {
-    const project = projects.find(p => p.id === projectId);
-    const material = materialCatalog[materialId];
-    
-    if (project && material) {
-      const newProjectMaterial = {
-        projectName: project.name,
-        material: material,
-        used: quantity,
-        status: project.status,
-      };
-      
-      setProjectMaterials(prev => [...prev, newProjectMaterial]);
-    }
-  };
-
-  // Handle accept request
-  const handleAcceptRequest = (requestId) => {
-    setMaterialRequests(prev => 
-      prev.map(req => 
-        req.id === requestId ? { ...req, status: "Accepted" } : req
-      )
-    );
-  };
-
-  // Handle reject request with reason
-  const handleRejectRequest = (requestId, reason) => {
-    setMaterialRequests(prev => 
-      prev.map(req => 
-        req.id === requestId ? { ...req, status: "Rejected", rejectionReason: reason } : req
-      )
-    );
-  };
-  
-  // Handle status update for project materials
-  const handleUpdateMaterialStatus = (index, newStatus) => {
-    setProjectMaterials(prev => 
-      prev.map((pm, idx) => 
-        idx === index ? { ...pm, status: newStatus } : pm
-      )
-    );
-  };
-
-  // Add handlers to material requests
-  const enrichedMaterialRequests = materialRequests.map(req => ({
-    ...req,
-    onAccept: handleAcceptRequest,
-    onReject: handleRejectRequest,
-  }));
-
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <ProjectsTab
-        projects={projects}
-        selectedProject={selectedProject}
-        setSelectedProject={setSelectedProject}
-        projectMaterials={projectMaterials}
-        materialRequests={enrichedMaterialRequests}
-        onAddProjectMaterial={handleAddProjectMaterial}
-        onUpdateMaterialStatus={handleUpdateMaterialStatus}
-      />
-    </div>
-  );
-};
-
-export default SampleApp;
+export default ProjectsTab;
