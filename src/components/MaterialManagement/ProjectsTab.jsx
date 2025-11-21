@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { materialRequestAPI, projectMaterialAPI } from '../../api/materialService';
+import { materialRequestAPI, projectMaterialAPI, materialAPI } from '../../api/materialService';
 import { projectAPI } from "../../api/projectAPI";
 
 // Projects Tab Component
@@ -11,7 +11,7 @@ const ProjectsTab = () => {
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const dropdownRef = useRef(null);
   const [requestStatusFilter, setRequestStatusFilter] = useState("All");
-  
+  const [materials, setMaterials] = useState([]); // ✅ ADD THIS LINE
   // Add Material Modal States
   const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
   const [newMaterial, setNewMaterial] = useState({
@@ -25,7 +25,7 @@ const ProjectsTab = () => {
   // Status Update Modal States
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedMaterialIndex, setSelectedMaterialIndex] = useState(null);
-  const [newStatus, setNewStatus] =useState("");
+  const [newStatus, setNewStatus] = useState("");
 
   // Data States
   const [projects, setProjects] = useState([]);
@@ -34,35 +34,64 @@ const ProjectsTab = () => {
   const [materialRequests, setMaterialRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-const filteredMaterialRequests = requestStatusFilter === "All" 
-  ? materialRequests 
-  : materialRequests.filter(req => req.status === requestStatusFilter);
-  // Fetch projects on mount
-  useEffect(() => {
-    fetchProjects();
-    fetchMaterialRequests();
-  }, []);
+
+  const filteredMaterialRequests = requestStatusFilter === "All" 
+    ? materialRequests 
+    : materialRequests.filter(req => req.status === requestStatusFilter);
+
+useEffect(() => {
+  fetchProjects();
+  fetchMaterialRequests();
+  fetchMaterials(); // ✅ ADD THIS LINE
+}, []);
 
   // Fetch project materials when project is selected
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedProject) {
       fetchProjectMaterials(selectedProject);
     }
   }, [selectedProject]);
 
-  const fetchProjects = async () => {
+  // ✅ ADD THIS ENTIRE FUNCTION
+const fetchMaterials = async () => {
   try {
-    setLoading(true);
-    const data = await projectAPI.getProjects(); // Use getProjects() not getAll()
-    
-    if (data.success) {
-      setProjects(data.projects || []);
-      if (data.projects?.length > 0) {
-        setSelectedProject(data.projects[0].id);
-      }
+    const data = await materialAPI.getAll();
+    if (data.projects || data.success) {
+      setMaterials(data.materials || []);
+      console.log('Materials fetched:', data.materials);
     }
   } catch (err) {
-    console.error('Error fetching projects:', err);
+    console.error('Error fetching materials:', err);
+  }
+};
+
+const fetchProjects = async () => {
+  try {
+    setLoading(true);
+    const data = await projectAPI.getProjects();
+    
+    console.log('🔍 Raw projects data:', data);
+    console.log('🔍 data.success:', data.success);
+    console.log('🔍 data.projects:', data.projects);
+    
+    // ✅ FIX: Check for projects array directly, not just success flag
+    if (data.projects && Array.isArray(data.projects)) {
+      console.log('📋 Projects array from API:', data.projects);
+      console.log('📋 Projects count from API:', data.projects.length);
+      
+      setProjects(data.projects);
+      console.log('✅ setProjects called with:', data.projects.length, 'projects');
+      
+      if (data.projects.length > 0) {
+        console.log('✅ First project:', data.projects[0]);
+        console.log('✅ Setting selected project to:', data.projects[0].id);
+        setSelectedProject(data.projects[0].id);
+      }
+    } else {
+      console.error('❌ No projects array in response');
+    }
+  } catch (err) {
+    console.error('❌ Error fetching projects:', err);
     setError('Failed to load projects');
   } finally {
     setLoading(false);
@@ -84,39 +113,34 @@ const filteredMaterialRequests = requestStatusFilter === "All"
     }
   };
 
-// Replace your fetchMaterialRequests function with this:
-
-// Replace your fetchMaterialRequests function in ProjectsTab.jsx
-
-const fetchMaterialRequests = async () => {
-  try {
-    setLoading(true);
-    console.log('Fetching all material requests...');
-    
-    // ✅ Use getAll() to fetch ALL requests (not just pending)
-    const data = await materialRequestAPI.getAll();
-    
-    console.log('Received data:', data);
-    
-    if (data.success) {
-      console.log('Material requests count:', data.count);
-      console.log('Material requests:', data.requests);
-      setMaterialRequests(data.requests || []);
-    } else {
-      console.error('Failed to fetch requests:', data.error);
-      setError(data.error || 'Failed to load material requests');
+  const fetchMaterialRequests = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching all material requests...');
+      
+      const data = await materialRequestAPI.getAll();
+      
+      console.log('Received data:', data);
+      
+      if (data.success) {
+        console.log('Material requests count:', data.count);
+        console.log('Material requests:', data.requests);
+        setMaterialRequests(data.requests || []);
+      } else {
+        console.error('Failed to fetch requests:', data.error);
+        setError(data.error || 'Failed to load material requests');
+      }
+    } catch (err) {
+      console.error('Error fetching material requests:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      setError('Failed to load material requests');
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error('Error fetching material requests:', err);
-    console.error('Error details:', err.response?.data || err.message);
-    setError('Failed to load material requests');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Close dropdown when clicking outside
- useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
@@ -127,14 +151,35 @@ const fetchMaterialRequests = async () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter projects based on search term
-  const filteredProjects = projects.filter(project =>
-    project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+
+// ✅ FIX: Ensure projects array exists before filtering
+const filteredProjects = React.useMemo(() => {
+  console.log('🔄 Recalculating filtered projects, projects:', projects);
+  
+  if (!projects || projects.length === 0) {
+    return [];
+  }
+  
+  if (searchTerm.trim() === "") {
+    return projects;
+  }
+  
+  return projects.filter(project => {
+    const searchLower = searchTerm.toLowerCase();
+    const name = (project.name || '').toLowerCase();
+    const status = (project.status || '').toLowerCase();
+    return name.includes(searchLower) || status.includes(searchLower);
+  });
+}, [projects, searchTerm]);
+
+console.log('🔎 Search term:', searchTerm);
+console.log('📊 Filtered projects:', filteredProjects);
+console.log('🔎 Search term:', searchTerm); // ✅ ADD THIS
+console.log('📊 Filtered projects:', filteredProjects); // ✅ ADD THIS
 
   const selectedProjectData = projects.find(p => p.id === selectedProject);
-
+console.log('🏗️ Projects state:', projects);
+console.log('🏗️ Projects length:', projects.length);
   // Filter project materials by status
   const filteredProjectMaterials = statusFilter === "All" 
     ? projectMaterials 
@@ -167,47 +212,38 @@ const fetchMaterialRequests = async () => {
 
   const handleAcceptRequest = async (requestId) => {
     try {
-    const result = await materialRequestAPI.approve(requestId, 'Request approved');
-    console.log('Approve result:', result);
-    fetchMaterialRequests();
-    if (selectedProject) {
-      fetchProjectMaterials(selectedProject);
+      const result = await materialRequestAPI.approve(requestId, 'Request approved');
+      console.log('Approve result:', result);
+      fetchMaterialRequests();
+      if (selectedProject) {
+        fetchProjectMaterials(selectedProject);
+      }
+    } catch (err) {
+      console.error('Error accepting request:', err);
+      console.error('Error response:', err.response?.data);
+      alert(`Failed to accept request: ${err.response?.data?.error || err.message}`);
     }
-  } catch (err) {
-    console.error('Error accepting request:', err);
-    console.error('Error response:', err.response?.data); // ✅ Log the actual error
-    alert(`Failed to accept request: ${err.response?.data?.error || err.message}`);
-  }
   };
 
-  const handleRejectClick = async () => {
-    if (rejectReason.trim() && selectedRequestId) {
-    try {
-      const result = await materialRequestAPI.reject(selectedRequestId, rejectReason);
-      console.log('Reject result:', result);
-      setShowRejectModal(false);
-      setRejectReason("");
-      setSelectedRequestId(null);
-      fetchMaterialRequests();
-    } catch (err) {
-      console.error('Error rejecting request:', err);
-      console.error('Error response:', err.response?.data); // ✅ Log the actual error
-      alert(`Failed to reject request: ${err.response?.data?.error || err.message}`);
-    }
-  }
+  const handleRejectClick = (requestId) => {
+    setSelectedRequestId(requestId);
+    setShowRejectModal(true);
+    setRejectReason("");
   };
 
   const handleRejectConfirm = async () => {
     if (rejectReason.trim() && selectedRequestId) {
       try {
-        await materialRequestAPI.reject(selectedRequestId, rejectReason);
+        const result = await materialRequestAPI.reject(selectedRequestId, rejectReason);
+        console.log('Reject result:', result);
         setShowRejectModal(false);
         setRejectReason("");
         setSelectedRequestId(null);
         fetchMaterialRequests();
       } catch (err) {
         console.error('Error rejecting request:', err);
-        alert('Failed to reject request');
+        console.error('Error response:', err.response?.data);
+        alert(`Failed to reject request: ${err.response?.data?.error || err.message}`);
       }
     }
   };
@@ -262,7 +298,7 @@ const fetchMaterialRequests = async () => {
       {/* Top Section */}
       <div className="bg-white rounded-lg md:rounded-xl shadow p-3 sm:p-4 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
-          {/* Select Project with Search */}
+        
           <div className="flex-1 w-full relative" ref={dropdownRef}>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               Select Project
@@ -322,7 +358,7 @@ const fetchMaterialRequests = async () => {
             </div>
           </div>
           
-          {/* Add Material Button */}
+          {/* Add Material Button - ✅ ADMIN CAN MANUALLY ADD MATERIALS */}
           <button
             onClick={() => setShowAddMaterialModal(true)}
             disabled={!selectedProject}
@@ -336,7 +372,7 @@ const fetchMaterialRequests = async () => {
         </div>
       </div>
 
-      {/* Materials Allocated Table */}
+      {/* Materials Allocated Table - ✅ SHOWS MANUALLY ADDED MATERIALS */}
       <div className="bg-white rounded-lg md:rounded-xl shadow overflow-hidden">
         <div className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">
@@ -507,27 +543,27 @@ const fetchMaterialRequests = async () => {
         </div>
       </div>
 
-      {/* Material Requests Table */}
+      {/* Material Requests Table - ✅ ADMIN CAN ACCEPT/REJECT REQUESTS */}
       <div className="bg-white rounded-lg md:rounded-xl shadow overflow-hidden">
         <div className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border-b border-gray-200">
-          <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">
+          <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-3">
             Material Requests
           </h2>
           <div className="flex gap-2 flex-wrap">
-    {["All", "PENDING", "APPROVED", "REJECTED"].map((status) => (
-      <button
-        key={status}
-        onClick={() => setRequestStatusFilter(status)}
-        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-          requestStatusFilter === status
-            ? "bg-blue-600 text-white"
-            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-        }`}
-      >
-        {status.charAt(0) + status.slice(1).toLowerCase()}
-      </button>
-    ))}
-  </div>
+            {["All", "PENDING", "APPROVED", "REJECTED"].map((status) => (
+              <button
+                key={status}
+                onClick={() => setRequestStatusFilter(status)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  requestStatusFilter === status
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {status.charAt(0) + status.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
         </div>
         
         {/* Desktop Table View */}
@@ -791,7 +827,7 @@ const fetchMaterialRequests = async () => {
         </div>
       )}
       
-      {/* Add Material Modal */}
+      {/* Add Material Modal - ✅ ADMIN CAN MANUALLY ADD MATERIALS */}
       {showAddMaterialModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6">
@@ -809,18 +845,21 @@ const fetchMaterialRequests = async () => {
                   Select Material
                 </label>
                 <select
-                  value={newMaterial.materialId}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, materialId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                >
-                  <option value="">Choose a material...</option>
-                  <option value="1">Cement</option>
-                  <option value="2">Steel Rods</option>
-                  <option value="3">Bitumen</option>
-                  <option value="4">Sand</option>
-                  <option value="5">Gravel</option>
-                  <option value="6">Concrete Mix</option>
-                </select>
+  value={newMaterial.materialId}
+  onChange={(e) => setNewMaterial({ ...newMaterial, materialId: e.target.value })}
+  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+>
+  <option value="">Choose a material...</option>
+  {materials.length === 0 ? (
+    <option disabled>Loading materials...</option>
+  ) : (
+    materials.map((material) => (
+      <option key={material.id} value={material.id}>
+        {material.name} ({material.unit})
+      </option>
+    ))
+  )}
+</select>
               </div>
               
               {/* Quantity Input */}

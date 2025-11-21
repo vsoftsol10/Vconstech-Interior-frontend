@@ -34,9 +34,36 @@ api.interceptors.response.use(
 
 // ============ MATERIAL APIs ============
 export const materialAPI = {
+  // ============ NEW DASHBOARD APIs ============
+  // Get dashboard data (metrics + recent usage logs)
+  getDashboardData: async () => {
+    const response = await api.get('/materials/dashboard');
+    return response.data.data; // Returns { metrics: {...}, usageLogs: [...] }
+  },
+
+  // Get material usage statistics
+  getUsageStats: async (filters = {}) => {
+    const response = await api.get('/materials/usage-stats', { params: filters });
+    return response.data.stats;
+  },
+
+  // Get project-wise material usage summary
+  getProjectSummary: async () => {
+    const response = await api.get('/materials/project-summary');
+    return response.data.summary;
+  },
+
+  // ============ EXISTING APIs ============
   // Get all materials
   getAll: async (params = {}) => {
     const response = await api.get('/materials', { params });
+    return response.data;
+  },
+
+  getApprovedByProject: async (projectId) => {
+    const response = await api.get('/materials/approved', {
+      params: { projectId }
+    });
     return response.data;
   },
 
@@ -100,23 +127,12 @@ export const projectMaterialAPI = {
 
 // ============ MATERIAL REQUEST APIs ============
 export const materialRequestAPI = {
-  // Get ALL requests (Admin only) - ADD THIS
+  // Get ALL requests (Admin only)
   getAll: async () => {
     const response = await api.get('/material-requests');
     return response.data;
   },
 
-  // Get my requests (Employee)
-  getMyRequests: async () => {
-    const response = await api.get('/material-requests/my-requests');
-    return response.data;
-  },
-
-  // Get pending requests (Admin only)
-  getPending: async () => {
-    const response = await api.get('/material-requests/pending');
-    return response.data;
-  },
   // Get my requests (Employee)
   getMyRequests: async () => {
     const response = await api.get('/material-requests/my-requests');
@@ -140,8 +156,6 @@ export const materialRequestAPI = {
     try {
       const response = await api.put(`/material-requests/${id}/approve`, {
         approvalNotes: approvalNotes || 'Request approved',
-        // Add reviewedBy if your backend expects it
-        // reviewedBy: getCurrentUserId(), // You may need to get current admin/reviewer ID
       });
       return response.data;
     } catch (error) {
@@ -150,7 +164,7 @@ export const materialRequestAPI = {
     }
   },
 
-  // ✅ FIXED: Reject request (Admin only)
+  // Reject request (Admin only)
   reject: async (id, rejectionReason) => {
     try {
       if (!rejectionReason || rejectionReason.trim() === '') {
@@ -159,8 +173,6 @@ export const materialRequestAPI = {
       
       const response = await api.put(`/material-requests/${id}/reject`, {
         rejectionReason: rejectionReason.trim(),
-        // Add reviewedBy if your backend expects it
-        // reviewedBy: getCurrentUserId(),
       });
       return response.data;
     } catch (error) {
