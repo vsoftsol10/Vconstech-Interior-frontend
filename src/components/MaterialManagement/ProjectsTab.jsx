@@ -26,7 +26,7 @@ const ProjectsTab = () => {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedMaterialIndex, setSelectedMaterialIndex] = useState(null);
   const [newStatus, setNewStatus] = useState("");
-
+  const [userRole, setUserRole] = useState(null);
   // Data States
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -40,9 +40,22 @@ const ProjectsTab = () => {
     : materialRequests.filter(req => req.status === requestStatusFilter);
 
 useEffect(() => {
+  // ✅ Get user role from token
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      setUserRole(payload.role);
+      console.log('User role:', payload.role);
+    } catch (e) {
+      console.error('Error parsing token:', e);
+      setUserRole('Site_Engineer'); // default fallback
+    }
+  }
+  
   fetchProjects();
   fetchMaterialRequests();
-  fetchMaterials(); // ✅ ADD THIS LINE
+  fetchMaterials();
 }, []);
 
   // Fetch project materials when project is selected
@@ -114,30 +127,66 @@ const fetchProjects = async () => {
   };
 
   const fetchMaterialRequests = async () => {
-    try {
-      setLoading(true);
-      console.log('Fetching all material requests...');
-      
-      const data = await materialRequestAPI.getAll();
-      
-      console.log('Received data:', data);
-      
-      if (data.success) {
-        console.log('Material requests count:', data.count);
-        console.log('Material requests:', data.requests);
-        setMaterialRequests(data.requests || []);
-      } else {
-        console.error('Failed to fetch requests:', data.error);
-        setError(data.error || 'Failed to load material requests');
+  try {
+    setLoading(true);
+    console.log('Fetching material requests...');
+    
+    // ✅ Get user role from localStorage or token
+    const token = localStorage.getItem('token');
+    let userRole = 'Site_Engineer'; // default
+    
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userRole = payload.role;
+        console.log('User role:', userRole);
+      } catch (e) {
+        console.error('Error parsing token:', e);
       }
-    } catch (err) {
-      console.error('Error fetching material requests:', err);
-      console.error('Error details:', err.response?.data || err.message);
-      setError('Failed to load material requests');
-    } finally {
-      setLoading(false);
     }
-  };
+    
+    // ✅ Fetch based on role
+    let data;
+    if (userRole.toUpperCase() === 'ADMIN') {
+      // Admin can see ALL requests
+      data = await materialRequestAPI.getAll();
+    } else {
+      // Site_Engineer can only see their own requests
+      data = await materialRequestAPI.getMyRequests();
+    }
+    
+    console.log('Received data:', data);
+    
+    if (data.success) {
+      console.log('Material requests count:', data.count);
+      console.log('Material requests:', data.requests);
+      setMaterialRequests(data.requests || []);
+    } else {
+      console.error('Failed to fetch requests:', data.error);
+      setError(data.error || 'Failed to load material requests');
+    }
+  } catch (err) {
+    console.error('Error fetching material requests:', err);
+    console.error('Error details:', err.response?.data || err.message);
+    
+    // ✅ Don't show permission error to user if they're just viewing their own requests
+    if (err.response?.status === 403) {
+      console.warn('Permission denied - fetching own requests instead');
+      try {
+        const data = await materialRequestAPI.getMyRequests();
+        if (data.success) {
+          setMaterialRequests(data.requests || []);
+        }
+      } catch (retryErr) {
+        setError('Failed to load material requests');
+      }
+    } else {
+      setError('Failed to load material requests');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Close dropdown when clicking outside
   useEffect(() => {
