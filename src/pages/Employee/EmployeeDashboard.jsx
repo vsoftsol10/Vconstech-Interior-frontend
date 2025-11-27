@@ -1,63 +1,268 @@
-import  { useState, useEffect } from 'react';
-import {  FileText,  AlertCircle,   Plus, Upload, FolderOpen,  X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, AlertCircle, Plus, Upload, FolderOpen, X, ExternalLink } from 'lucide-react';
 import EmployeeNavbar from '../../components/Employee/EmployeeNavbar';
+import { projectAPI } from '../../api/projectAPI';
+import { materialRequestAPI } from '../../api/materialService';
 
 const EmployeeDashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [employeeName, setEmployeeName] = useState('Loading...');
   const [assignedProjectsCount, setAssignedProjectsCount] = useState(0);
+  const [assignedProjects, setAssignedProjects] = useState([]);
+  const [materialRequests, setMaterialRequests] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [recentFiles, setRecentFiles] = useState([]); // ✅ NEW: Real files state
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  const currentDate = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   
+  const currentDate = new Date().toLocaleDateString('en-IN', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+
+  // ✅ NEW: Function to fetch files from assigned projects
+  const fetchRecentFiles = async (projects, token) => {
+    try {
+      console.log('📁 Fetching files for assigned projects:', projects.length);
+      
+      if (projects.length === 0) {
+        setRecentFiles([]);
+        return;
+      }
+
+      // Fetch files from all assigned projects
+      const filePromises = projects.map(project =>
+        fetch(`${API_BASE_URL}/projects/${project.id}/files`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(res => res.json())
+        .then(data => ({
+          projectName: project.name,
+          files: data.files || []
+        }))
+        .catch(err => {
+          console.error(`Error fetching files for project ${project.id}:`, err);
+          return { projectName: project.name, files: [] };
+        })
+      );
+
+      const projectFilesData = await Promise.all(filePromises);
+      
+      // Combine all files and add project name
+      const allFiles = projectFilesData.flatMap(({ projectName, files }) =>
+        files.map(file => ({
+          ...file,
+          projectName
+        }))
+      );
+
+      // Sort by upload date (most recent first) and take top 5
+      const sortedFiles = allFiles
+        .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))
+        .slice(0, 5);
+
+      console.log('✅ Recent files fetched:', sortedFiles.length);
+      setRecentFiles(sortedFiles);
+    } catch (error) {
+      console.error('❌ Error fetching recent files:', error);
+      setRecentFiles([]);
+    }
+  };
+
+  // ✅ Helper function to get file icon based on extension
+  const getFileIcon = (fileName) => {
+    if (!fileName) return '📎';
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const iconMap = {
+      pdf: '📄',
+      doc: '📝',
+      docx: '📝',
+      xls: '📊',
+      xlsx: '📊',
+      jpg: '🖼️',
+      jpeg: '🖼️',
+      png: '🖼️',
+      dwg: '📐',
+      dxf: '📐'
+    };
+    return iconMap[ext] || '📎';
+  };
+
+  // ✅ Helper function to get file type display
+  const getFileType = (fileName) => {
+    if (!fileName) return 'FILE';
+    const ext = fileName.split('.').pop()?.toUpperCase();
+    return ext || 'FILE';
+  };
+
+  // ✅ Helper function to format file size
+  const formatFileSize = (bytes) => {
+    if (!bytes) return 'N/A';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  // ✅ Function to handle file viewing/downloading
+  const handleViewFile = async (file) => {
+    try {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      
+      let fileUrl;
+      if (file.fileUrl) {
+        const baseUrl = API_BASE_URL.replace('/api', '');
+        fileUrl = file.fileUrl.startsWith('http') 
+          ? file.fileUrl 
+          : `${baseUrl}${file.fileUrl}`;
+      } else {
+        throw new Error('File URL not found');
+      }
+      
+      const response = await fetch(fileUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to download file (${response.status})`);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+    } catch (error) {
+      console.error('Error viewing file:', error);
+      alert('Failed to open file: ' + error.message);
+    }
+  };
+  
+  // Fetch all employee data
   useEffect(() => {
     const fetchEmployeeData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        setLoading(true);
+        setError(null);
+        
+        // Check both possible token keys and sync them
+        let token = localStorage.getItem('token');
+        if (!token) {
+          token = localStorage.getItem('authToken');
+        }
+        
         if (!token) {
           console.error('No token found');
+          setError('Authentication required. Please login.');
           return;
         }
+        
+        // ✅ Sync tokens to ensure consistency
+        localStorage.setItem('token', token);
+        localStorage.setItem('authToken', token);
 
-        // Fetch employee profile data
-        const profileResponse = await fetch('http://localhost:5000/api/profile', {
+        // 1. Fetch employee profile data
+        const profileResponse = await fetch(`${API_BASE_URL.replace('/api', '')}/api/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
 
-        if (profileResponse.ok) {
-          const profileData = await profileResponse.json();
-          console.log('Profile data:', profileData); // Debug log
-          
-          setEmployeeName(profileData.user.name || 'Employee');
-          
-          // Fetch all projects for the company
-          const projectsResponse = await fetch('http://localhost:5000/api/projects', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-
-          if (projectsResponse.ok) {
-            const projectsData = await projectsResponse.json();
-            console.log('Projects data:', projectsData); // Debug log
-            
-            // ✅ FIXED: Filter projects where this ENGINEER is assigned
-            // The token contains engineer ID for logged-in engineers
-            const engineerId = profileData.user.id; // This is the engineer ID from token
-            
-            const assignedProjects = projectsData.projects.filter(project => 
-              project.assignedEngineer && 
-              project.assignedEngineer.id === engineerId
-            );
-            
-            console.log('Assigned projects:', assignedProjects); // Debug log
-            setAssignedProjectsCount(assignedProjects.length);
-          }
+        if (!profileResponse.ok) {
+          throw new Error('Failed to fetch profile');
         }
+
+        const profileData = await profileResponse.json();
+        console.log('✅ Profile data:', profileData);
+        
+        setEmployeeName(profileData.user.name || 'Employee');
+        const engineerId = profileData.user.id;
+
+        // 2. Fetch all projects and filter assigned ones
+        let myProjects = [];
+        try {
+          const projectsData = await projectAPI.getProjects();
+          console.log('✅ All projects:', projectsData);
+          
+          // Filter projects assigned to this engineer
+          myProjects = projectsData.projects.filter(project => 
+            project.assignedEngineer && 
+            project.assignedEngineer.id === engineerId
+          );
+          
+          console.log('✅ My assigned projects:', myProjects);
+          setAssignedProjects(myProjects);
+          setAssignedProjectsCount(myProjects.length);
+
+          // ✅ NEW: Fetch recent files from assigned projects
+          await fetchRecentFiles(myProjects, token);
+        } catch (err) {
+          console.error('❌ Error fetching projects:', err);
+          setAssignedProjects([]);
+          setAssignedProjectsCount(0);
+        }
+
+        // 3. Fetch material requests
+        try {
+          const requestsData = await materialRequestAPI.getMyRequests();
+          console.log('✅ Material requests:', requestsData);
+          
+          // Sort by date (most recent first) and take only the last 5
+          const sortedRequests = (requestsData.requests || [])
+            .filter(req => req.material && req.project)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 5);
+          
+          setMaterialRequests(sortedRequests);
+          
+          // Generate notifications from material requests
+          const requestNotifications = sortedRequests
+            .filter(req => req.material && req.project)
+            .map(req => {
+              const timeAgo = getTimeAgo(new Date(req.createdAt));
+              const materialName = req.material?.name || 'Unknown Material';
+              
+              if (req.status === 'APPROVED' || req.status === 'approved') {
+                return {
+                  type: 'approval',
+                  message: `Material request for ${materialName} approved`,
+                  time: timeAgo
+                };
+              } else if (req.status === 'REJECTED' || req.status === 'rejected') {
+                return {
+                  type: 'rejection',
+                  message: `Material request for ${materialName} rejected - ${req.rejectionReason || 'See comments'}`,
+                  time: timeAgo
+                };
+              } else {
+                return {
+                  type: 'update',
+                  message: `Material request for ${materialName} is pending`,
+                  time: timeAgo
+                };
+              }
+            });
+          
+          setNotifications(requestNotifications);
+        } catch (err) {
+          console.error('❌ Error fetching material requests:', err);
+          setMaterialRequests([]);
+        }
+
       } catch (error) {
-        console.error('Error fetching employee data:', error);
+        console.error('❌ Error fetching employee data:', error);
+        setError('Failed to load dashboard data. Please try again.');
         setEmployeeName('Employee');
       } finally {
         setLoading(false);
@@ -67,59 +272,101 @@ const EmployeeDashboard = () => {
     fetchEmployeeData();
   }, []); 
 
+  // Helper function to calculate time ago
+  const getTimeAgo = (date) => {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString('en-IN');
+  };
+
+  // Calculate material request stats
+  const validRequests = materialRequests.filter(r => r.material && r.project);
+  const approvedCount = validRequests.filter(r => r.status === 'APPROVED' || r.status === 'approved').length;
+  const pendingCount = validRequests.filter(r => r.status === 'PENDING' || r.status === 'pending').length;
+  const rejectedCount = validRequests.filter(r => r.status === 'REJECTED' || r.status === 'rejected').length;
+
   const kpiData = [
-    { icon: FolderOpen, label: 'Active Projects', value: loading ? '...' : assignedProjectsCount.toString(), color: 'bg-blue-500', trend: '+2 this month' },
-    { icon: AlertCircle, label: 'Notifications', value: '7', color: 'bg-purple-500', trend: '2 new' },
-  ];
-
-  const projects = [
-    { id: 1, name: 'Residential Complex - Phase 2', client: 'ABC Builders', progress: 75, stage: 'Electrical', status: 'Active', deadline: '2025-11-15' },
-    { id: 2, name: 'Commercial Tower', client: 'XYZ Developers', progress: 45, stage: 'Carpentry', status: 'Active', deadline: '2025-12-20' },
-  ];
-
-  const materialRequests = [
-    { id: 1, material: 'Cement - 500 bags', project: 'Residential Complex', date: '2025-10-20', status: 'Pending' },
-    { id: 2, material: 'Steel Rods - 2 tons', project: 'Commercial Tower', date: '2025-10-19', status: 'Approved' },
-  ];
-
-  const recentFiles = [
-    { name: 'Floor_Plan_Rev3.pdf', project: 'Residential Complex', uploadedBy: 'PM Sharma', date: '2025-10-22', type: 'PDF' },
-    { name: 'Electrical_Layout.dwg', project: 'Commercial Tower', uploadedBy: 'Eng. Patel', date: '2025-10-21', type: 'DWG' },
-    { name: 'Site_Photo_1.jpg', project: 'Villa Project', uploadedBy: 'Rajesh Kumar', date: '2025-10-20', type: 'Image' },
-  ];
-
-  const notifications = [
-    { type: 'approval', message: 'Steel Rods request approved for Commercial Tower', time: '2 hours ago' },
-    { type: 'file', message: 'New floor plan uploaded by PM Sharma', time: '3 hours ago' },
-    { type: 'update', message: 'Villa Project moved to finishing stage', time: '5 hours ago' },
-    { type: 'rejection', message: 'Paint request rejected - See comments', time: '1 day ago' },
-    { type: 'comment', message: 'PM Singh commented on your progress report', time: '1 day ago' }
+    { 
+      icon: FolderOpen, 
+      label: 'Active Projects', 
+      value: loading ? '...' : assignedProjectsCount.toString(), 
+      color: 'bg-blue-500', 
+      trend: `${assignedProjectsCount} assigned` 
+    },
+    { 
+      icon: AlertCircle, 
+      label: 'Material Requests', 
+      value: loading ? '...' : validRequests.length.toString(), 
+      color: 'bg-purple-500', 
+      trend: `${pendingCount} pending` 
+    },
   ];
 
   const getStatusColor = (status) => {
-    switch(status.toLowerCase()) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'on hold': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-orange-100 text-orange-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+    switch(status?.toLowerCase()) {
+      case 'active':
+      case 'ongoing': 
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+      case 'on hold': 
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completed': 
+        return 'bg-blue-100 text-blue-800';
+      case 'approved': 
+        return 'bg-green-100 text-green-800';
+      case 'rejected': 
+        return 'bg-red-100 text-red-800';
+      default: 
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch(priority) {
-      case 'high': return 'border-l-4 border-red-500 bg-red-50';
-      case 'medium': return 'border-l-4 border-yellow-500 bg-yellow-50';
-      case 'low': return 'border-l-4 border-green-500 bg-green-50';
-      default: return 'border-l-4 border-gray-500 bg-gray-50';
-    }
+  const getStatusDisplay = (status) => {
+    const statusMap = {
+      'PENDING': 'Planning',
+      'ONGOING': 'In Progress',
+      'COMPLETED': 'Completed',
+      'pending': 'Pending',
+      'approved': 'Approved',
+      'rejected': 'Rejected'
+    };
+    return statusMap[status] || status;
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <EmployeeNavbar/>
+        <div className="mt-26 flex items-center justify-center p-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+            <div className="flex items-center gap-3 mb-2">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+              <h2 className="text-lg font-semibold text-red-900">Error Loading Dashboard</h2>
+            </div>
+            <p className="text-red-700">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <EmployeeNavbar/>
+      
       {/* Top Bar */}
       <div className="mt-26">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -163,109 +410,180 @@ const EmployeeDashboard = () => {
             {/* Project Progress */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Project Progress Overview</h2>
+                <h2 className="text-lg font-bold text-gray-900">My Assigned Projects</h2>
                 <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">View All</button>
               </div>
-              <div className="space-y-4">
-                {projects.map((project) => (
-                  <div key={project.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{project.name}</h3>
-                        <p className="text-sm text-gray-600">{project.client}</p>
+              
+              {loading ? (
+                <div className="text-center py-8 text-gray-500">Loading projects...</div>
+              ) : assignedProjects.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No projects assigned yet</div>
+              ) : (
+                <div className="space-y-4">
+                  {assignedProjects.map((project) => (
+                    <div key={project.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{project.name}</h3>
+                          <p className="text-sm text-gray-600">{project.clientName}</p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                          {getStatusDisplay(project.status)}
+                        </span>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
-                        {project.status}
-                      </span>
+                      <div className="grid grid-cols-3 gap-4 text-sm mb-3">
+                        <div>
+                          <p className="text-gray-600">Type</p>
+                          <p className="font-medium text-gray-900">{project.projectType || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Location</p>
+                          <p className="font-medium text-gray-900">{project.location || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Deadline</p>
+                          <p className="font-medium text-gray-900">
+                            {project.endDate ? new Date(project.endDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                      {project.budget && (
+                        <div className="text-sm text-gray-600">
+                          Budget: ₹{parseFloat(project.budget).toLocaleString('en-IN')}
+                        </div>
+                      )}
                     </div>
-                    <div className="grid grid-cols-3 gap-4 text-sm mb-3">
-                      <div>
-                        <p className="text-gray-600">Stage</p>
-                        <p className="font-medium text-gray-900">{project.stage}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Completion</p>
-                        <p className="font-medium text-gray-900">{project.progress}%</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Deadline</p>
-                        <p className="font-medium text-gray-900">{new Date(project.deadline).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</p>
-                      </div>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                        style={{ width: `${project.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Material Request Insights */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Material Request Insights</h2>
+                <h2 className="text-lg font-bold text-gray-900">Material Request Status</h2>
                 <div className="flex gap-4 text-sm">
-                  <span className="text-green-600 font-medium">✓ 1 Approved</span>
-                  <span className="text-orange-600 font-medium flex gap-1"><AlertCircle size={15} className='mt-1'/> 1 Pending</span>
-                  <span className="text-red-600 font-medium flex gap-1"><X size={15} className='mt-1'/> 0 Rejected</span>
+                  <span className="text-green-600 font-medium">✓ {approvedCount} Approved</span>
+                  <span className="text-orange-600 font-medium flex gap-1">
+                    <AlertCircle size={15} className='mt-1'/> {pendingCount} Pending
+                  </span>
+                  <span className="text-red-600 font-medium flex gap-1">
+                    <X size={15} className='mt-1'/> {rejectedCount} Rejected
+                  </span>
                 </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Material</th>
-                      <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Project</th>
-                      <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Date</th>
-                      <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {materialRequests.map((request) => (
-                      <tr key={request.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-2 text-sm text-gray-900">{request.material}</td>
-                        <td className="py-3 px-2 text-sm text-gray-600">{request.project}</td>
-                        <td className="py-3 px-2 text-sm text-gray-600">{new Date(request.date).toLocaleDateString('en-IN')}</td>
-                        <td className="py-3 px-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
-                            {request.status}
-                          </span>
-                        </td>
+              
+              {loading ? (
+                <div className="text-center py-8 text-gray-500">Loading requests...</div>
+              ) : materialRequests.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No material requests yet</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Material</th>
+                        <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Project</th>
+                        <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Quantity</th>
+                        <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Date</th>
+                        <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {materialRequests
+                        .filter(request => request.material && request.project)
+                        .map((request) => (
+                        <tr key={request.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-2 text-sm text-gray-900">
+                            {request.material?.name || 'N/A'}
+                          </td>
+                          <td className="py-3 px-2 text-sm text-gray-600">
+                            {request.project?.name || 'N/A'}
+                          </td>
+                          <td className="py-3 px-2 text-sm text-gray-600">
+                            {request.quantity} {request.material?.unit || ''}
+                          </td>
+                          <td className="py-3 px-2 text-sm text-gray-600">
+                            {new Date(request.createdAt).toLocaleDateString('en-IN')}
+                          </td>
+                          <td className="py-3 px-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                              {getStatusDisplay(request.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
-            {/* Recent Files */}
+            {/* ✅ UPDATED: Recent Files - Now fetching real data */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-bold text-gray-900">Recent File Uploads</h2>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">View All Files</button>
+                <button
+                  onClick={() => navigate('/employee/file-management')} 
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  View All Files
+                </button>
               </div>
-              <div className="space-y-3">
-                {recentFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 rounded">
-                        <FileText className="w-5 h-5 text-blue-600" />
+              
+              {loading ? (
+                <div className="text-center py-8 text-gray-500">Loading files...</div>
+              ) : recentFiles.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                  <p>No files uploaded yet</p>
+                  <p className="text-xs mt-1">Upload files to your assigned projects to see them here</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentFiles.map((file) => (
+                    <div 
+                      key={file.id} 
+                      className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors cursor-pointer"
+                      onClick={() => handleViewFile(file)}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="p-2 bg-blue-100 rounded text-2xl flex-shrink-0">
+                          {getFileIcon(file.fileName)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 text-sm truncate">
+                            {file.fileName || 'Unnamed File'}
+                          </p>
+                          <p className="text-xs text-gray-600 truncate">
+                            {file.projectName}
+                            {file.uploaderName && ` • ${file.uploaderName}`}
+                          </p>
+                          {file.documentType && (
+                            <span className="inline-block mt-1 text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+                              {file.documentType}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">{file.name}</p>
-                        <p className="text-xs text-gray-600">{file.project} • {file.uploadedBy}</p>
+                      <div className="text-right flex-shrink-0 ml-3">
+                        <p className="text-xs text-gray-500">
+                          {new Date(file.uploadedAt).toLocaleDateString('en-IN')}
+                        </p>
+                        <span className="text-xs text-gray-400">
+                          {getFileType(file.fileName)}
+                        </span>
+                        {file.fileSize && (
+                          <p className="text-xs text-gray-400">
+                            {formatFileSize(file.fileSize)}
+                          </p>
+                        )}
                       </div>
+                      <ExternalLink className="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" />
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">{file.date}</p>
-                      <span className="text-xs text-gray-400">{file.type}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -274,25 +592,38 @@ const EmployeeDashboard = () => {
             {/* Notifications */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Notifications</h2>
-              <div className="space-y-3">
-                {notifications.map((notif, index) => (
-                  <div key={index} className="p-3 border-l-4 border-blue-500 bg-blue-50 rounded">
-                    <p className="text-sm text-gray-900">{notif.message}</p>
-                    <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
-                  </div>
-                ))}
-              </div>
+              
+              {loading ? (
+                <div className="text-center py-4 text-gray-500">Loading notifications...</div>
+              ) : notifications.length === 0 ? (
+                <div className="text-center py-4 text-gray-500">No notifications</div>
+              ) : (
+                <div className="space-y-3">
+                  {notifications.map((notif, index) => (
+                    <div key={index} className="p-3 border-l-4 border-blue-500 bg-blue-50 rounded">
+                      <p className="text-sm text-gray-900">{notif.message}</p>
+                      <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quick Actions */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
               <div className="space-y-2">
-                <button className="w-full flex items-center gap-3 p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <button 
+                  onClick={() => navigate('/employee/material-management')}
+                  className="w-full flex items-center gap-3 p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
                   <Plus className="w-5 h-5" />
                   <span className="font-medium">Raise Material Request</span>
                 </button>
-                <button className="w-full flex items-center gap-3 p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                <button 
+                  onClick={() => navigate('/employee/file-management')}
+                  className="w-full flex items-center gap-3 p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
                   <Upload className="w-5 h-5" />
                   <span className="font-medium">Upload File</span>
                 </button>

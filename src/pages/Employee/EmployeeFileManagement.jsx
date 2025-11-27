@@ -1,9 +1,9 @@
-import  { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Folder, File, Trash2, Upload, X, Save, FolderOpen, ChevronRight, ExternalLink, AlertCircle } from 'lucide-react';
 import EmployeeNavbar from '../../components/Employee/EmployeeNavbar';
 
 const EmployeeFileManagement = () => {
- const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectFiles, setProjectFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,13 +49,14 @@ const EmployeeFileManagement = () => {
     setTimeout(() => setErrorMessage(''), 5000);
   };
 
-  // Fetch all projects
+  // Fetch projects assigned to the current engineer
   const fetchProjects = async () => {
     try {
       setLoading(true);
       const token = getAuthToken();
       
-      const response = await fetch(`${API_BASE_URL}/projects`, {
+      // Fetch projects assigned to this engineer
+      const response = await fetch(`${API_BASE_URL}/engineers/my-projects`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -66,13 +67,15 @@ const EmployeeFileManagement = () => {
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch projects');
+        throw new Error(data.error || 'Failed to fetch assigned projects');
       }
 
+      // If we got all projects, we would need to filter them
+      // For now, just display all projects until backend is ready
       setProjects(data.projects || []);
     } catch (error) {
-      console.error('Error fetching projects:', error);
-      showErrorMessage('Failed to load projects: ' + error.message);
+      console.error('Error fetching assigned projects:', error);
+      showErrorMessage('Failed to load assigned projects: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -138,7 +141,6 @@ const EmployeeFileManagement = () => {
       const formData = new FormData();
       formData.append('file', fileFormData.file);
       
-      // Add document type as metadata if your API supports it
       if (fileFormData.documentType) {
         formData.append('documentType', fileFormData.documentType);
       }
@@ -161,7 +163,6 @@ const EmployeeFileManagement = () => {
       setFileFormData({ documentType: '', file: null, fileName: '' });
       setShowAddFileForm(false);
       
-      // Refresh files list
       await fetchProjectFiles(selectedProject.id);
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -192,8 +193,6 @@ const EmployeeFileManagement = () => {
       }
 
       showSuccessMessage('File deleted successfully!');
-      
-      // Refresh files list
       await fetchProjectFiles(selectedProject.id);
     } catch (error) {
       console.error('Error deleting file:', error);
@@ -262,11 +261,9 @@ const EmployeeFileManagement = () => {
     try {
       const token = getAuthToken();
       
-      // Use fileUrl property from the file object
       let fileUrl;
       
       if (file.fileUrl) {
-        // Remove '/api' from base URL and construct full URL
         const baseUrl = API_BASE_URL.replace('/api', '');
         fileUrl = file.fileUrl.startsWith('http') 
           ? file.fileUrl 
@@ -279,9 +276,6 @@ const EmployeeFileManagement = () => {
         throw new Error('File URL not found');
       }
       
-      console.log('Attempting to fetch file from:', fileUrl);
-      
-      // Fetch the file with proper authorization
       const response = await fetch(fileUrl, {
         method: 'GET',
         headers: {
@@ -293,14 +287,10 @@ const EmployeeFileManagement = () => {
         throw new Error(`Failed to download file (${response.status})`);
       }
 
-      // Get the blob
       const blob = await response.blob();
-      
-      // Create a blob URL and open it
       const blobUrl = window.URL.createObjectURL(blob);
       window.open(blobUrl, '_blank');
       
-      // Clean up the blob URL after a delay
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
       console.error('Error viewing file:', error);
@@ -314,15 +304,14 @@ const EmployeeFileManagement = () => {
         <EmployeeNavbar />
       </nav>
 
-
-      <div className="mt-16  md: p-4 md:p-15 bg-gray-50 min-h-screen">
+      <div className="mt-16 md:p-4 md:p-15 bg-gray-50 min-h-screen">
         <div className="max-w-6xl mx-auto">
           <div className="mb-6 md:mb-8 text-center px-2 mt-6 sm:mt-10">
             <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-black mb-2">
               E-Vault
             </h1>
             <p className="text-xs sm:text-sm md:text-base text-gray-700">
-              {viewMode === 'projects' ? 'Manage project documents securely' : `Files for ${selectedProject?.name}`}
+              {viewMode === 'projects' ? 'My Assigned Projects - Manage documents securely' : `Files for ${selectedProject?.name}`}
             </p>
           </div>
 
@@ -343,7 +332,7 @@ const EmployeeFileManagement = () => {
           {viewMode === 'files' && (
             <div className="mb-4 px-2 flex items-center gap-2 text-sm md:text-base text-gray-600">
               <button onClick={handleBackToProjects} className="hover:text-black font-medium">
-                Projects
+                My Projects
               </button>
               <ChevronRight size={16} />
               <span className="text-black font-semibold">{selectedProject?.name}</span>
@@ -438,7 +427,7 @@ const EmployeeFileManagement = () => {
                 <div className="text-center py-12 md:py-16 bg-white rounded-lg border-2 border-amber-400">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
                   <p className="text-base md:text-lg font-medium text-gray-700">
-                    Loading projects...
+                    Loading your assigned projects...
                   </p>
                 </div>
               ) : projects.length > 0 ? (
@@ -492,10 +481,10 @@ const EmployeeFileManagement = () => {
                 <div className="text-center py-12 md:py-16 bg-white rounded-lg border-2 border-amber-400">
                   <FolderOpen size={48} className="md:w-16 md:h-16 mx-auto text-gray-400 mb-4" />
                   <p className="text-base md:text-lg font-medium text-gray-700 mb-2">
-                    No projects found
+                    No projects assigned yet
                   </p>
                   <p className="text-sm text-gray-500">
-                    Projects will appear here once they are created
+                    You will see projects here once they are assigned to you
                   </p>
                 </div>
               )}
@@ -582,4 +571,4 @@ const EmployeeFileManagement = () => {
   );
 }
 
-export default EmployeeFileManagement
+export default EmployeeFileManagement;

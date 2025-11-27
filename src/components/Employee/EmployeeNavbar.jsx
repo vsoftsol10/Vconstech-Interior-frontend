@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Bell, LogOut, X, Menu } from 'lucide-react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { logout } from '../../utils/auth'; // ✅ Import auth utility
 
 const EmployeeNavbar = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -13,18 +14,8 @@ const EmployeeNavbar = () => {
   };
 
   const confirmLogout = () => {
-  // Clear all authentication data
-  localStorage.removeItem('token');
-  localStorage.removeItem('user'); // if you store user data separately
-  
-  // Close modal
+  logout(navigate); // Pass navigate function
   setShowLogoutModal(false);
-  
-  // Navigate to login/home
-  navigate("/");
-  
-  // Optional: Force reload to clear any cached state
-  window.location.reload();
 };
 
   const cancelLogout = () => {

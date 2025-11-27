@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, File, Trash2, Upload, X, Save, ChevronRight, FolderOpen, Download, ExternalLink, AlertCircle } from 'lucide-react';
 import SidePannel from '../../components/common/SidePannel';
 import Navbar from '../../components/common/Navbar';
-
-
+import { getAuthToken, getAuthHeaders } from '../../utils/auth'; // ✅ Import auth utilities
 
 const FileManagement = () => {
   const [projects, setProjects] = useState([]);
@@ -36,10 +35,6 @@ const FileManagement = () => {
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-  const getAuthToken = () => {
-    return localStorage.getItem('authToken');
-  };
-
   const showSuccessMessage = (message) => {
     setSaveMessage(message);
     setErrorMessage('');
@@ -56,14 +51,17 @@ const FileManagement = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const token = getAuthToken();
+      const token = getAuthToken(); // ✅ Use utility
+      
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+
+      console.log('📡 Fetching projects with token:', token.substring(0, 20) + '...');
       
       const response = await fetch(`${API_BASE_URL}/projects`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: getAuthHeaders() // ✅ Use utility
       });
 
       const data = await response.json();
@@ -73,6 +71,7 @@ const FileManagement = () => {
       }
 
       setProjects(data.projects || []);
+      console.log('✅ Projects loaded:', data.projects?.length || 0);
     } catch (error) {
       console.error('Error fetching projects:', error);
       showErrorMessage('Failed to load projects: ' + error.message);
@@ -85,14 +84,17 @@ const FileManagement = () => {
   const fetchProjectFiles = async (projectId) => {
     try {
       setFilesLoading(true);
-      const token = getAuthToken();
+      const token = getAuthToken(); // ✅ Use utility
+      
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+
+      console.log('📡 Fetching files for project:', projectId);
       
       const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: getAuthHeaders() // ✅ Use utility
       });
 
       const data = await response.json();
@@ -102,6 +104,7 @@ const FileManagement = () => {
       }
 
       setProjectFiles(data.files || []);
+      console.log('✅ Files loaded:', data.files?.length || 0);
     } catch (error) {
       console.error('Error fetching project files:', error);
       showErrorMessage('Failed to load project files: ' + error.message);
@@ -137,11 +140,15 @@ const FileManagement = () => {
     }
 
     try {
-      const token = getAuthToken();
+      const token = getAuthToken(); // ✅ Use utility
+      
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+
       const formData = new FormData();
       formData.append('file', fileFormData.file);
       
-      // Add document type as metadata if your API supports it
       if (fileFormData.documentType) {
         formData.append('documentType', fileFormData.documentType);
       }
@@ -149,7 +156,7 @@ const FileManagement = () => {
       const response = await fetch(`${API_BASE_URL}/projects/${selectedProject.id}/files`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}` // ✅ Don't include Content-Type for FormData
         },
         body: formData
       });
@@ -164,7 +171,6 @@ const FileManagement = () => {
       setFileFormData({ documentType: '', file: null, fileName: '' });
       setShowAddFileForm(false);
       
-      // Refresh files list
       await fetchProjectFiles(selectedProject.id);
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -178,14 +184,15 @@ const FileManagement = () => {
     }
 
     try {
-      const token = getAuthToken();
+      const token = getAuthToken(); // ✅ Use utility
       
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+
       const response = await fetch(`${API_BASE_URL}/projects/${selectedProject.id}/files/${fileId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: getAuthHeaders() // ✅ Use utility
       });
 
       const data = await response.json();
@@ -195,8 +202,6 @@ const FileManagement = () => {
       }
 
       showSuccessMessage('File deleted successfully!');
-      
-      // Refresh files list
       await fetchProjectFiles(selectedProject.id);
     } catch (error) {
       console.error('Error deleting file:', error);
@@ -263,13 +268,15 @@ const FileManagement = () => {
 
   const handleViewFile = async (file) => {
     try {
-      const token = getAuthToken();
+      const token = getAuthToken(); // ✅ Use utility
       
-      // Use fileUrl property from the file object
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+
       let fileUrl;
       
       if (file.fileUrl) {
-        // Remove '/api' from base URL and construct full URL
         const baseUrl = API_BASE_URL.replace('/api', '');
         fileUrl = file.fileUrl.startsWith('http') 
           ? file.fileUrl 
@@ -284,7 +291,6 @@ const FileManagement = () => {
       
       console.log('Attempting to fetch file from:', fileUrl);
       
-      // Fetch the file with proper authorization
       const response = await fetch(fileUrl, {
         method: 'GET',
         headers: {
@@ -296,14 +302,10 @@ const FileManagement = () => {
         throw new Error(`Failed to download file (${response.status})`);
       }
 
-      // Get the blob
       const blob = await response.blob();
-      
-      // Create a blob URL and open it
       const blobUrl = window.URL.createObjectURL(blob);
       window.open(blobUrl, '_blank');
       
-      // Clean up the blob URL after a delay
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
       console.error('Error viewing file:', error);

@@ -3,6 +3,7 @@ import { User, Lock, AlertCircle } from 'lucide-react';
 import loginBack from "../../assets/login-BCK-2.mp4"
 import { useNavigate } from 'react-router-dom';
 import { loginEngineer } from '../../api/engineerService';
+import { handleLoginSuccess } from '../../utils/auth';
 
 export default function EmployeeLogin() {
   const [username, setUsername] = useState('');
@@ -30,16 +31,10 @@ export default function EmployeeLogin() {
       console.log('✅ Login response:', response);
       
       if (response.success) {
-        // Store token and engineer data
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('engineer', JSON.stringify(response.engineer));
-        
-        console.log('✅ Engineer logged in:', response.engineer.name);
-        console.log('✅ Token stored, redirecting to dashboard...');
-        
-        // Redirect to engineer dashboard
-        navigate('/employee-dashboard');
-      }
+  handleLoginSuccess(response);
+  console.log('✅ Engineer logged in:', response.engineer.name);
+  navigate('/employee-dashboard');
+}
     } catch (err) {
       console.error('❌ Login error:', err);
       setError(err.error || 'Login failed. Please check your credentials.');

@@ -122,6 +122,14 @@ const ProjectFormModal = ({
       errors.budget = "Budget must be a positive number";
     }
 
+    // Quotation Amount validation
+    if (
+      project.quotationAmount &&
+      (isNaN(project.quotationAmount) || parseFloat(project.quotationAmount) < 0)
+    ) {
+      errors.quotationAmount = "Quotation amount must be a positive number";
+    }
+
     return errors;
   };
 
@@ -396,6 +404,40 @@ const ProjectFormModal = ({
               )}
             </div>
 
+            {/* Quotation Amount */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quotation Amount (₹)
+              </label>
+              <input
+                type="number"
+                value={project.quotationAmount || ""}
+                onChange={(e) => {
+                  onChange({ ...project, quotationAmount: e.target.value });
+                  if (validationErrors.quotationAmount) {
+                    setValidationErrors({
+                      ...validationErrors,
+                      quotationAmount: undefined,
+                    });
+                  }
+                }}
+                className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                  validationErrors.quotationAmount ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="e.g., 150000"
+                disabled={loading}
+                min="0"
+              />
+              {validationErrors.quotationAmount && (
+                <p className="text-red-500 text-xs mt-1">
+                  {validationErrors.quotationAmount}
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Amount quoted to the client
+              </p>
+            </div>
+
             {/* Start Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -604,30 +646,30 @@ const ProjectFormModal = ({
           </div>
         </div>
 
-      <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row justify-end gap-3 sticky bottom-0 bg-white">
-  <button
-    onClick={onClose}
-    className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-    disabled={loading}
-  >
-    Cancel
-  </button>
-  <button
-    onClick={handleSubmit}
-    className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-    disabled={loading || (employees.length === 0 && !project.id)}
-    type="button"  // ✅ Prevent form submission on Enter key
-  >
-    {loading ? (
-      <>
-        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-        <span>Saving...</span>
-      </>
-    ) : (
-      submitLabel
-    )}
-  </button>
-</div>
+        <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row justify-end gap-3 sticky bottom-0 bg-white">
+          <button
+            onClick={onClose}
+            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            disabled={loading || (employees.length === 0 && !project.id)}
+            type="button"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <span>Saving...</span>
+              </>
+            ) : (
+              submitLabel
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

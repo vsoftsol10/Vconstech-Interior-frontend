@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, User, Home, Mail, Building, UserCog, AlertCircle, CheckCircle } from 'lucide-react';
 import bgLogin from '../assets/login-BCK-2.mp4';
+import { handleLoginSuccess } from '../utils/auth';
 const Login = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -49,14 +50,12 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess('Login successful!');
-       localStorage.setItem('token', data.token);  // ← Change 'authToken' to 'token'
-localStorage.setItem('user', JSON.stringify(data.user));
-
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1000);
-      } else {
+  handleLoginSuccess(data);
+  setSuccess('Login successful!');
+  setTimeout(() => {
+    window.location.href = '/dashboard';
+  }, 1000);
+} else {
         setError(data.error || 'Login failed');
       }
     } catch (err) {
@@ -114,23 +113,20 @@ localStorage.setItem('user', JSON.stringify(data.user));
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess('Login successful!');
- localStorage.setItem('token', data.token);  // ← Change 'authToken' to 'token'
-localStorage.setItem('user', JSON.stringify(data.user));
-
-        setSignupData({
-          name: '',
-          email: '',
-          role: '',
-          companyName: '',
-          password: '',
-          confirmPassword: ''
-        });
-
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 2000);
-      } else {
+  handleLoginSuccess(data);
+  setSuccess('Account created successfully!');
+  setSignupData({
+    name: '',
+    email: '',
+    role: '',
+    companyName: '',
+    password: '',
+    confirmPassword: ''
+  });
+  setTimeout(() => {
+    window.location.href = '/dashboard';
+  }, 2000);
+} else {
         setError(data.error || 'Signup failed');
       }
     } catch (err) {
