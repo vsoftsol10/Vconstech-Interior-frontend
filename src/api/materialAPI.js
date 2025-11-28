@@ -1,10 +1,6 @@
 // src/api/materialAPI.js
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-// Helper to get auth token
-const getAuthToken = () => {
-  return localStorage.getItem('authToken');
-};
+import { getAuthToken } from '../utils/auth';
 
 // Helper to handle API responses
 const handleResponse = async (response) => {

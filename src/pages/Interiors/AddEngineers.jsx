@@ -10,7 +10,7 @@ import EditEngineerModal from '../../components/AddSiteEngineer/EditEngineerModa
 
 // API functions
 const getAllEngineers = async () => {
-  const token = localStorage.getItem('authToken')
+  const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('No authentication token found')
   }
@@ -33,7 +33,7 @@ const getAllEngineers = async () => {
 }
 
 const createEngineer = async (engineerData) => {
-  const token = localStorage.getItem('authToken')
+  const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('No authentication token found')
   }
@@ -67,7 +67,7 @@ const createEngineer = async (engineerData) => {
 }
 
 const updateEngineer = async (id, engineerData) => {
-  const token = localStorage.getItem('authToken')
+  const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('No authentication token found')
   }
@@ -103,7 +103,7 @@ const updateEngineer = async (id, engineerData) => {
 }
 
 const deleteEngineer = async (id) => {
-  const token = localStorage.getItem('authToken')
+  const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('No authentication token found')
   }
@@ -140,7 +140,7 @@ const AddEngineers = () => {
     console.log('Fetching engineers...')
     setIsLoading(true)
     
-    const token = localStorage.getItem('authToken')
+    const token = localStorage.getItem('token')
     if (!token) {
       console.log('No token found, user not logged in')
       setEngineers([])
@@ -167,7 +167,7 @@ const AddEngineers = () => {
           error.message === 'Session expired. Please login again.' ||
           error.error === 'Unauthorized' ||
           error.message === 'Unauthorized') {
-        localStorage.removeItem('authToken')
+        localStorage.removeItem('token')
         localStorage.removeItem('user')
         navigate('/login')
       } else {

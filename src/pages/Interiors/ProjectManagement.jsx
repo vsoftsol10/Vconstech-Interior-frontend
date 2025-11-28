@@ -118,10 +118,10 @@ const handleStatusChangeInline = async (projectId, newStatus) => {
     console.error('Failed to load projects:', err);
     setError(err.error || 'Failed to load projects');
     
-    if (err.status === 403 || err.error === 'Invalid or expired token') {
-      localStorage.removeItem('authToken');
-      window.location.href = '/login';
-    }
+    // if (err.status === 403 || err.error === 'Invalid or expired token') {
+    //   localStorage.removeItem('authToken');
+    //   window.location.href = '/project';
+    // }
   } finally {
     setLoading(false);
   }

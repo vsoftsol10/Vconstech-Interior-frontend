@@ -1,4 +1,5 @@
 // src/api/projectAPI.js
+import { getAuthToken } from '../utils/auth.js';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const pendingRequests = new Map();
@@ -25,9 +26,7 @@ const deduplicateRequest = async (key, requestFn) => {
 };
 
 // Helper function to get auth token
-const getAuthToken = () => {
-  return localStorage.getItem('authToken');
-};
+getAuthToken();
 
 // Helper function
 const transformStatusToBackend = (status) => {
