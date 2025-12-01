@@ -49,7 +49,7 @@ const EmployeeNavbar = () => {
               <Link
                 to="/employee-dashboard"
                 className={`px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm uppercase tracking-wide transition-colors duration-200 ${
-                  location.pathname === '/employee/projects'
+                  location.pathname === '/employee-dashboard'
                     ? 'bg-slate-900 text-white'
                     : 'text-slate-800 hover:bg-slate-900/10'
                 }`}
@@ -75,6 +75,16 @@ const EmployeeNavbar = () => {
                 }`}
               >
                 File Management
+              </Link>
+              <Link
+                to="/employee/labour-management"
+                className={`px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm uppercase tracking-wide transition-colors duration-200 ${
+                  location.pathname === '/employee/labour-management'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-800 hover:bg-slate-900/10'
+                }`}
+              >
+                Labour Management
               </Link>
             </div>
 
@@ -123,10 +133,10 @@ const EmployeeNavbar = () => {
           <div className="fixed top-16 sm:top-20 right-0 left-0 bg-white shadow-lg animate-slide-down">
             <div className="px-4 py-3 space-y-2">
               <Link
-                to="/employee/projects"
+                to="/employee-dashboard"
                 onClick={closeMobileMenu}
                 className={`block px-4 py-3 rounded-lg font-semibold text-sm uppercase tracking-wide transition-colors duration-200 ${
-                  location.pathname === '/employee/projects'
+                  location.pathname === '/employee-dashboard'
                     ? 'bg-slate-900 text-white'
                     : 'text-slate-800 hover:bg-slate-100'
                 }`}
@@ -155,6 +165,18 @@ const EmployeeNavbar = () => {
               >
                 File Management
               </Link>
+              <Link
+                to="/employee/labour-management"
+                onClick={closeMobileMenu}
+                className={`block px-4 py-3 rounded-lg font-semibold text-sm uppercase tracking-wide transition-colors duration-200 ${
+                  location.pathname === '/employee/labour-management'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-800 hover:bg-slate-100'
+                }`}
+              >
+                Labour Management
+              </Link>
+              
               <button
                 onClick={() => {
                   closeMobileMenu();

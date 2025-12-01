@@ -13,6 +13,7 @@ import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
 import AddEngineers from "./pages/Interiors/AddEngineers";
 import EmployeeFileManagement from "./pages/Employee/EmployeeFileManagement";
 import EmployeeMaterialManagement from "./pages/Employee/EmployeeMaterialManagement";
+import LabourManagement from "./pages/Employee/LabourManagement";
 function App() {
 
   return (
@@ -30,6 +31,7 @@ function App() {
       <Route path="/employee-dashboard" element={<EmployeeDashboard/>} />
       <Route path="/employee/file-management" element={<EmployeeFileManagement/>} />
       <Route path="/employee/material-management" element={<EmployeeMaterialManagement/>} />
+      <Route path="/employee/labour-management" element={<LabourManagement/>} />
 
 
     </Routes>
