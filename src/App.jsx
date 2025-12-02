@@ -14,6 +14,7 @@ import AddEngineers from "./pages/Interiors/AddEngineers";
 import EmployeeFileManagement from "./pages/Employee/EmployeeFileManagement";
 import EmployeeMaterialManagement from "./pages/Employee/EmployeeMaterialManagement";
 import LabourManagement from "./pages/Employee/LabourManagement";
+import AdminLabourManagemet from "./pages/Interiors/AdminLabourManagemet";
 function App() {
 
   return (
@@ -26,6 +27,7 @@ function App() {
       <Route path="/financial" element={<FinancialManagement/>} />
       <Route path="/file-managememt" element={<FileManagement/>} />
       <Route path="/financial-management" element={<FinancialManagement/>} />
+      <Route path="/labor-managememt" element={<AdminLabourManagemet/>} />
       <Route path="/add-engineers" element={<AddEngineers/>} />
       <Route path="/employee-login" element={<EmployeeLogin/>} />
       <Route path="/employee-dashboard" element={<EmployeeDashboard/>} />

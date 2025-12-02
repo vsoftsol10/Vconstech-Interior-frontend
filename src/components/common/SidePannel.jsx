@@ -5,7 +5,7 @@ import material from "../../assets/Icon/MaterialManagement.png";
 import financial from "../../assets/Icon/FinancialManagement.png";
 import contract from "../../assets/Icon/ContractManagement.png";
 import file from "../../assets/Icon/FileManagement.png";
-import settings from "../../assets/Icon/Settings.png";
+import labourManage from "../../assets/Icon/labourManagement.png";
 import AddEngg from "../../assets/Icon/AddEngg.png";
 import { LogOut, X } from "lucide-react";
 
@@ -46,8 +46,8 @@ const SidePannel = () => {
     <img src={AddEngg} alt="Add Engineer" className="w-6 h-6 object-contain" />
   );
 
-  const SettingIcon = (
-    <img src={settings} alt="Settings" className="w-6 h-6 object-contain" />
+  const laborManagementIcon = (
+    <img src={labourManage} alt="Settings" className="w-6 h-6 object-contain" />
   );
 
   const logout = (
@@ -66,6 +66,7 @@ const SidePannel = () => {
     { name: "Financial Management", path: "/financial-management", icon: financialIcon },
     { name: "Contract Management", path: "/contract", icon: contractIcon },
     { name: "File Management", path: "/file-managememt", icon: fileIcon },
+    { name: "Labour Management", path: "/labor-managememt", icon: laborManagementIcon },
     { name: "Logout", path: "/", icon: logout },
   ];
 

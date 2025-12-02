@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, Package, DollarSign, FileText, TrendingUp, Calendar, Users, ArrowRight, ChevronLeft, ChevronRight, IndianRupee, AlertCircle, Loader } from 'lucide-react';
+import { LayoutGrid, Package, DollarSign, FileText, TrendingUp, Calendar, Users, ArrowRight, ChevronLeft, ChevronRight, IndianRupee, AlertCircle, Loader, MapPin, Briefcase } from 'lucide-react';
 import Navbar from '../../components/common/Navbar';
 import SidePannel from '../../components/common/SidePannel';
 
@@ -10,15 +10,14 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // State for all dashboard data
   const [dashboardData, setDashboardData] = useState({
     projects: [],
     materials: { metrics: {}, usageLogs: [] },
     financial: { projects: [], summary: {} },
-    engineers: []
+    engineers: [],
+    contracts: []
   });
 
-  // API Configuration
   const API_BASE_URL = 'http://localhost:5000/api';
   
   const getAuthToken = () => localStorage.getItem('authToken') || localStorage.getItem('token');
@@ -35,7 +34,6 @@ const Dashboard = () => {
     return data;
   };
 
-  // Fetch all dashboard data
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
@@ -53,33 +51,25 @@ const Dashboard = () => {
           'Content-Type': 'application/json'
         };
 
-        // Fetch all data in parallel
-        const [projectsRes, materialsRes, financialRes, engineersRes] = await Promise.allSettled([
-          // Projects
+        const [projectsRes, materialsRes, financialRes, engineersRes, contractsRes] = await Promise.allSettled([
           fetch(`${API_BASE_URL}/projects`, { headers }).then(handleResponse),
-          
-          // Materials Dashboard
           fetch(`${API_BASE_URL}/materials/dashboard`, { headers }).then(handleResponse),
-          
-          // Financial Projects
           fetch(`${API_BASE_URL}/financial/projects`, { headers }).then(handleResponse),
-          
-          // Engineers
-          fetch(`${API_BASE_URL}/employees`, { headers }).then(handleResponse)
+          fetch(`${API_BASE_URL}/employees`, { headers }).then(handleResponse),
+          fetch(`${API_BASE_URL}/contracts`, { headers }).then(handleResponse)
         ]);
 
-        // Process results
         const newData = {
           projects: projectsRes.status === 'fulfilled' ? projectsRes.value.projects || [] : [],
           materials: materialsRes.status === 'fulfilled' ? materialsRes.value.data || { metrics: {}, usageLogs: [] } : { metrics: {}, usageLogs: [] },
           financial: financialRes.status === 'fulfilled' ? { projects: financialRes.value.projects || [], count: financialRes.value.count || 0 } : { projects: [], count: 0 },
-          engineers: engineersRes.status === 'fulfilled' ? engineersRes.value.employees || [] : []
+          engineers: engineersRes.status === 'fulfilled' ? engineersRes.value.employees || [] : [],
+          contracts: contractsRes.status === 'fulfilled' ? contractsRes.value.contracts || [] : []
         };
 
         setDashboardData(newData);
         
-        // Log any failures
-        [projectsRes, materialsRes, financialRes, engineersRes].forEach((res, idx) => {
+        [projectsRes, materialsRes, financialRes, engineersRes, contractsRes].forEach((res, idx) => {
           if (res.status === 'rejected') {
             console.warn(`Failed to fetch data [${idx}]:`, res.reason);
           }
@@ -96,15 +86,23 @@ const Dashboard = () => {
     fetchAllData();
   }, []);
 
-  // Calculate summary cards data from fetched data
   const calculateSummaryCards = () => {
     const ongoingProjects = dashboardData.projects.filter(p => p.status === 'ONGOING' || p.status === 'In Progress');
     const materialsCount = dashboardData.materials.metrics?.totalMaterials || 0;
     const recentMaterialUpdates = dashboardData.materials.usageLogs?.length || 0;
     
-    // Calculate financial totals
     const totalRevenue = dashboardData.financial.projects.reduce((sum, p) => sum + (parseFloat(p.quotationAmount) || 0), 0);
-    const totalPending = dashboardData.financial.projects.reduce((sum, p) => sum + (parseFloat(p.pendingAmount) || 0), 0);
+    
+    const activeContracts = dashboardData.contracts.filter(c => {
+      const status = (c.status || c.workStatus || '').toLowerCase().trim();
+      return status === 'in progress' || status === 'inprogress' || status === 'active' || status === 'ongoing';
+    }).length;
+    
+    const totalContractValue = dashboardData.contracts.reduce((sum, c) => {
+      return sum + (parseFloat(c.contractValue || c.contractAmount || 0));
+    }, 0);
+    
+    const combinedFinancialTotal = totalRevenue + totalContractValue;
     
     return [
       {
@@ -128,7 +126,8 @@ const Dashboard = () => {
       {
         icon: IndianRupee,
         title: 'Financial Management',
-        value: `₹${(totalRevenue / 100000).toFixed(1)}L Revenue`,
+        value: `₹${(combinedFinancialTotal / 100000).toFixed(1)}L Total`,
+        subtitle: `${dashboardData.financial.count || 0} Projects + ${dashboardData.contracts.length} Contracts`,
         gradient: 'from-green-400 to-emerald-600',
         bgColor: 'bg-green-50',
         iconColor: 'text-green-600'
@@ -136,8 +135,8 @@ const Dashboard = () => {
       {
         icon: FileText,
         title: 'Contract Management',
-        value: `${dashboardData.financial.count || 0} Contracts`,
-        subtitle: `${dashboardData.engineers.length} Engineers`,
+        value: `${dashboardData.contracts.length} Contracts`,
+        subtitle: `${activeContracts} Active`,
         gradient: 'from-blue-400 to-indigo-600',
         bgColor: 'bg-blue-50',
         iconColor: 'text-blue-600'
@@ -145,13 +144,11 @@ const Dashboard = () => {
     ];
   };
 
-  // Prepare ongoing projects with real data
   const getOngoingProjects = () => {
     return dashboardData.projects
       .filter(p => p.status === 'ONGOING' || p.status === 'In Progress')
       .slice(0, 4)
       .map(project => {
-        // Calculate progress based on dates
         const start = new Date(project.startDate);
         const end = new Date(project.endDate);
         const now = new Date();
@@ -161,16 +158,20 @@ const Dashboard = () => {
 
         return {
           id: project.id,
+          projectId: project.projectId,
           name: project.name,
           client: project.clientName || 'N/A',
           progress: isNaN(progress) ? 50 : progress,
-          deadline: project.endDate,
-          image: project.imageUrl || 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400'
+          startDate: project.startDate,
+          endDate: project.endDate,
+          location: project.location || 'Not specified',
+          projectType: project.projectType || 'General',
+          budget: project.budget,
+          description: project.description
         };
       });
   };
 
-  // Calculate cost allocation from materials
   const getCostAllocation = () => {
     const metrics = dashboardData.materials.metrics;
     
@@ -183,7 +184,6 @@ const Dashboard = () => {
       ];
     }
 
-    // Convert category breakdown to percentage
     const total = metrics.categoryBreakdown.reduce((sum, cat) => sum + cat.count, 0);
     return metrics.categoryBreakdown.map(cat => ({
       category: cat.category,
@@ -191,14 +191,42 @@ const Dashboard = () => {
     }));
   };
 
-  // Auto-rotate carousel
+  const getContractStats = () => {
+    const activeContracts = dashboardData.contracts.filter(c => {
+      const status = (c.status || c.workStatus || '').toLowerCase().trim();
+      return status === 'in progress' || status === 'inprogress' || status === 'active' || status === 'ongoing';
+    }).length;
+    
+    const completedContracts = dashboardData.contracts.filter(c => {
+      const status = (c.status || c.workStatus || '').toLowerCase().trim();
+      return status === 'completed' || status === 'finished' || status === 'closed' || status === 'done';
+    }).length;
+    
+    const pendingContracts = dashboardData.contracts.filter(c => {
+      const status = (c.status || c.workStatus || '').toLowerCase().trim();
+      return status === 'pending' || status === 'draft' || status === 'awaiting' || status === 'not started';
+    }).length;
+    
+    const totalValue = dashboardData.contracts.reduce((sum, c) => {
+      return sum + (parseFloat(c.contractValue || c.contractAmount || 0));
+    }, 0);
+    
+    return {
+      active: activeContracts,
+      completed: completedContracts,
+      pending: pendingContracts,
+      totalValue: totalValue,
+      total: dashboardData.contracts.length
+    };
+  };
+
   useEffect(() => {
     const projects = getOngoingProjects();
     if (projects.length === 0) return;
     
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % projects.length);
-    }, 4000);
+    }, 5000);
     
     return () => clearInterval(timer);
   }, [dashboardData.projects]);
@@ -213,7 +241,6 @@ const Dashboard = () => {
     setCurrentSlide((prev) => (prev - 1 + projects.length) % projects.length);
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -225,7 +252,6 @@ const Dashboard = () => {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -247,17 +273,17 @@ const Dashboard = () => {
   const summaryCards = calculateSummaryCards();
   const ongoingProjects = getOngoingProjects();
   const chartData = getCostAllocation();
+  const contractStats = getContractStats();
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <nav className="fixed top-0 left-0 right-0 z-50 h-16">
+                <nav className="fixed top-0 left-0 right-0 z-50 h-16">
         <Navbar />
       </nav>
 
       <aside className="fixed left-0 top-0 bottom-0 w-16 md:w-64 z-40 overflow-y-auto">
         <SidePannel />
       </aside>
-
       <div className="pt-20 pl-16 md:pl-64">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard Overview</h1>
@@ -289,7 +315,7 @@ const Dashboard = () => {
           })}
         </div>
 
-        {/* Ongoing Projects Carousel */}
+        {/* Ongoing Projects Carousel - WITHOUT PHOTOS */}
         {ongoingProjects.length > 0 && (
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
@@ -317,48 +343,93 @@ const Dashboard = () => {
               >
                 {ongoingProjects.map((project) => (
                   <div key={project.id} className="min-w-full px-2">
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
-                      <div className="md:flex">
-                        <div className="md:w-2/5">
-                          <img
-                            src={project.image}
-                            alt={project.name}
-                            className="w-full h-64 md:h-full object-cover"
-                          />
-                        </div>
-                        <div className="p-6 md:w-3/5">
-                          <h3 className="text-2xl font-bold text-gray-800 mb-2">{project.name}</h3>
-                          <p className="text-gray-600 mb-4 flex items-center gap-2">
-                            <Users size={16} />
-                            {project.client}
-                          </p>
-
-                          <div className="mb-4">
-                            <div className="flex justify-between mb-2">
-                              <span className="text-gray-700 font-medium">Progress</span>
-                              <span className="text-yellow-600 font-bold">{project.progress}%</span>
+                    <div className="bg-gradient-to-br from-yellow-50 via-white to-amber-50 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 border border-yellow-100">
+                      <div className="p-8">
+                        {/* Project Header */}
+                        <div className="flex items-start justify-between mb-6">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">
+                                {project.projectId}
+                              </div>
+                              <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                                {project.projectType}
+                              </div>
                             </div>
-                            <div className="w-full bg-gray-300 rounded-full h-4 overflow-hidden">
-                              <div
-                                className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-full rounded-full transition-all duration-500"
-                                style={{ width: `${project.progress}%` }}
-                              ></div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-2">{project.name}</h3>
+                            {project.description && (
+                              <p className="text-gray-600 text-sm line-clamp-2">{project.description}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Project Details Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                            <Users className="text-blue-600 flex-shrink-0" size={20} />
+                            <div>
+                              <p className="text-xs text-gray-500">Client</p>
+                              <p className="text-sm font-semibold text-gray-800">{project.client}</p>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 text-gray-600 mb-6">
-                            <Calendar size={16} />
-                            <span>Deadline: {new Date(project.deadline).toLocaleDateString()}</span>
+                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                            <MapPin className="text-red-600 flex-shrink-0" size={20} />
+                            <div>
+                              <p className="text-xs text-gray-500">Location</p>
+                              <p className="text-sm font-semibold text-gray-800">{project.location}</p>
+                            </div>
                           </div>
 
-                          <button 
-                            onClick={() => navigate('/project')}
-                            className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2 group"
-                          >
-                            View Details
-                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" />
-                          </button>
+                          {project.budget && (
+                            <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                              <IndianRupee className="text-green-600 flex-shrink-0" size={20} />
+                              <div>
+                                <p className="text-xs text-gray-500">Budget</p>
+                                <p className="text-sm font-semibold text-gray-800">
+                                  ₹{(project.budget / 100000).toFixed(2)}L
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                            <Calendar className="text-purple-600 flex-shrink-0" size={20} />
+                            <div>
+                              <p className="text-xs text-gray-500">Timeline</p>
+                              <p className="text-sm font-semibold text-gray-800">
+                                {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
                         </div>
+
+                        {/* Progress Section */}
+                        <div className="mb-6 p-4 bg-white rounded-lg border border-gray-100">
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-gray-700 font-semibold">Project Progress</span>
+                            <span className="text-yellow-600 font-bold text-lg">{project.progress}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                            <div
+                              className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                              style={{ width: `${project.progress}%` }}
+                            >
+                              {project.progress > 10 && (
+                                <span className="text-white text-xs font-bold">{project.progress}%</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Button */}
+                        <button 
+                          onClick={() => navigate('/project')}
+                          className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group"
+                        >
+                          View Project Details
+                          <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -381,28 +452,45 @@ const Dashboard = () => {
         )}
 
         {/* Insights Section */}
+        {/* Insights Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Cost Allocation */}
+          {/* Contract Statistics */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-800">Material Distribution</h2>
-              <TrendingUp className="text-yellow-600" size={24} />
+              <h2 className="text-xl font-bold text-gray-800">Contract Statistics</h2>
+              <FileText className="text-blue-600" size={24} />
             </div>
             <div className="space-y-4">
-              {chartData.map((item, index) => (
-                <div key={index}>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-gray-700 font-medium">{item.category}</span>
-                    <span className="text-gray-600">{item.value}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${item.value}%` }}
-                    ></div>
-                  </div>
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <FileText className="text-blue-600" size={20} />
+                  <span className="text-gray-700 font-medium">Total Contracts</span>
                 </div>
-              ))}
+                <span className="text-xl font-bold text-gray-800">{contractStats.total}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-gray-700 font-medium">Active Contracts</span>
+                </div>
+                <span className="text-xl font-bold text-gray-800">{contractStats.active}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span className="text-gray-700 font-medium">Pending Contracts</span>
+                </div>
+                <span className="text-xl font-bold text-gray-800">{contractStats.pending}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <IndianRupee className="text-purple-600" size={20} />
+                  <span className="text-gray-700 font-medium">Total Value</span>
+                </div>
+                <span className="text-xl font-bold text-gray-800">
+                  ₹{(contractStats.totalValue / 100000).toFixed(1)}L
+                </span>
+              </div>
             </div>
           </div>
 
@@ -412,7 +500,7 @@ const Dashboard = () => {
               <h2 className="text-xl font-bold text-gray-800">Quick Stats</h2>
               <Calendar className="text-yellow-600" size={24} />
             </div>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <Users className="text-blue-600" size={20} />
@@ -422,7 +510,7 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <Calendar className="text-green-600" size={20} />
+                  <Package className="text-green-600" size={20} />
                   <span className="text-gray-700 font-medium">Total Materials</span>
                 </div>
                 <span className="text-xl font-bold text-gray-800">
@@ -431,8 +519,8 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <FileText className="text-purple-600" size={20} />
-                  <span className="text-gray-700 font-medium">Financial Projects</span>
+                  <DollarSign className="text-purple-600" size={20} />
+                  <span className="text-gray-700 font-medium">Total Projects</span>
                 </div>
                 <span className="text-xl font-bold text-gray-800">
                   {dashboardData.financial.count || 0}
