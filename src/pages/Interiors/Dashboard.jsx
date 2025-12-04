@@ -149,19 +149,29 @@ const Dashboard = () => {
       .filter(p => p.status === 'ONGOING' || p.status === 'In Progress')
       .slice(0, 4)
       .map(project => {
+        // ✅ Use actualProgress from database
+        const actualProgress = project.actualProgress || 0;
+        
+        // Calculate time-based progress for comparison
         const start = new Date(project.startDate);
         const end = new Date(project.endDate);
         const now = new Date();
         const totalDays = (end - start) / (1000 * 60 * 60 * 24);
         const elapsed = (now - start) / (1000 * 60 * 60 * 24);
-        const progress = Math.min(Math.max(Math.round((elapsed / totalDays) * 100), 0), 100);
+        const timeProgress = Math.min(Math.max(Math.round((elapsed / totalDays) * 100), 0), 100);
+
+        // Determine if project is ahead, on track, or behind
+        const progressStatus = actualProgress > timeProgress + 10 ? 'ahead' : 
+                              actualProgress < timeProgress - 10 ? 'behind' : 'ontrack';
 
         return {
           id: project.id,
           projectId: project.projectId,
           name: project.name,
           client: project.clientName || 'N/A',
-          progress: isNaN(progress) ? 50 : progress,
+          progress: isNaN(actualProgress) ? 0 : actualProgress, // ✅ Use actual progress
+          timeProgress: isNaN(timeProgress) ? 50 : timeProgress,
+          progressStatus: progressStatus,
           startDate: project.startDate,
           endDate: project.endDate,
           location: project.location || 'Not specified',
@@ -277,13 +287,14 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-                <nav className="fixed top-0 left-0 right-0 z-50 h-16">
+      <nav className="fixed top-0 left-0 right-0 z-50 h-16">
         <Navbar />
       </nav>
 
       <aside className="fixed left-0 top-0 bottom-0 w-16 md:w-64 z-40 overflow-y-auto">
         <SidePannel />
       </aside>
+      
       <div className="pt-20 pl-16 md:pl-64">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard Overview</h1>
@@ -315,7 +326,7 @@ const Dashboard = () => {
           })}
         </div>
 
-        {/* Ongoing Projects Carousel - WITHOUT PHOTOS */}
+        {/* Ongoing Projects Carousel */}
         {ongoingProjects.length > 0 && (
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
@@ -355,6 +366,19 @@ const Dashboard = () => {
                               <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
                                 {project.projectType}
                               </div>
+                              {/* ✅ Progress Status Badge */}
+                              {project.progressStatus === 'ahead' && (
+                                <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold flex items-center gap-1">
+                                  <TrendingUp size={12} />
+                                  Ahead of Schedule
+                                </div>
+                              )}
+                              {project.progressStatus === 'behind' && (
+                                <div className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold flex items-center gap-1">
+                                  <AlertCircle size={12} />
+                                  Behind Schedule
+                                </div>
+                              )}
                             </div>
                             <h3 className="text-2xl font-bold text-gray-800 mb-2">{project.name}</h3>
                             {project.description && (
@@ -404,13 +428,13 @@ const Dashboard = () => {
                           </div>
                         </div>
 
-                        {/* Progress Section */}
+                        {/* ✅ Progress Section - Now shows ACTUAL progress */}
                         <div className="mb-6 p-4 bg-white rounded-lg border border-gray-100">
                           <div className="flex justify-between items-center mb-3">
-                            <span className="text-gray-700 font-semibold">Project Progress</span>
+                            <span className="text-gray-700 font-semibold">Actual Project Progress</span>
                             <span className="text-yellow-600 font-bold text-lg">{project.progress}%</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden mb-2">
                             <div
                               className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
                               style={{ width: `${project.progress}%` }}
@@ -419,6 +443,16 @@ const Dashboard = () => {
                                 <span className="text-white text-xs font-bold">{project.progress}%</span>
                               )}
                             </div>
+                          </div>
+                          {/* ✅ Show time-based progress for comparison */}
+                          <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
+                            <span>Time-based progress: {project.timeProgress}%</span>
+                            {project.progressStatus === 'ahead' && (
+                              <span className="text-green-600 font-medium">+{project.progress - project.timeProgress}% ahead</span>
+                            )}
+                            {project.progressStatus === 'behind' && (
+                              <span className="text-red-600 font-medium">{project.progress - project.timeProgress}% behind</span>
+                            )}
                           </div>
                         </div>
 
@@ -451,7 +485,6 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Insights Section */}
         {/* Insights Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Contract Statistics */}

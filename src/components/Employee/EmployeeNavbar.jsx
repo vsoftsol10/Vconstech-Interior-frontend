@@ -39,7 +39,7 @@ const EmployeeNavbar = () => {
             <div className="flex items-center space-x-4">
               <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3">
                 <h1 className="text-lg sm:text-2xl lg:text-3xl uppercase font-black text-slate-900 tracking-tight">
-                  Employee
+                  Engineer
                 </h1>
               </div>
             </div>

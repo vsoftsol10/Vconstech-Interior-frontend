@@ -350,28 +350,48 @@ const ProjectFormModal = ({
             </div>
 
             {/* Status (only for existing projects) */}
-            {project.id && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  value={project.status || "Planning"}
-                  onChange={(e) =>
-                    onChange({ ...project, status: e.target.value })
-                  }
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  disabled={loading}
-                >
-                  <option value="Planning">Planning</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  Current status of the project
-                </p>
-              </div>
-            )}
+           {project.id && (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Actual Progress (%)
+    </label>
+    <div className="space-y-2">
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={project.progress || 0}
+        onChange={(e) =>
+          onChange({ ...project, progress: parseInt(e.target.value) })
+        }
+        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+        disabled={loading}
+      />
+      <div className="flex items-center justify-between">
+        <input
+          type="number"
+          min="0"
+          max="100"
+          value={project.progress || 0}
+          onChange={(e) => {
+            const val = parseInt(e.target.value);
+            if (val >= 0 && val <= 100) {
+              onChange({ ...project, progress: val });
+            }
+          }}
+          className="w-20 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          disabled={loading}
+        />
+        <span className="text-sm text-gray-600">
+          Current: <span className="font-semibold text-blue-600">{project.progress || 0}%</span>
+        </span>
+      </div>
+    </div>
+    <p className="text-xs text-gray-500 mt-1">
+      Manually set the actual work completion percentage
+    </p>
+  </div>
+)}
 
             {/* Budget */}
             <div>

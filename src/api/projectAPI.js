@@ -6,37 +6,21 @@ const pendingRequests = new Map();
 
 // Helper to deduplicate requests
 const deduplicateRequest = async (key, requestFn) => {
-  // If this exact request is already in progress, return the existing promise
   if (pendingRequests.has(key)) {
     console.log('⚠️ Duplicate request detected, using cached promise:', key);
     return pendingRequests.get(key);
   }
 
-  // Create the request promise
   const requestPromise = requestFn()
     .finally(() => {
-      // Clean up after request completes
       pendingRequests.delete(key);
     });
 
-  // Store the promise
   pendingRequests.set(key, requestPromise);
-
   return requestPromise;
 };
 
-// Helper function to get auth token
 getAuthToken();
-
-// Helper function
-const transformStatusToBackend = (status) => {
-  const statusMap = {
-    'Planning': 'PENDING',
-    'In Progress': 'ONGOING',
-    'Completed': 'COMPLETED'
-  };
-  return statusMap[status] || 'PENDING';
-};
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {
@@ -56,28 +40,28 @@ const handleResponse = async (response) => {
 export const projectAPI = {
   // Get all projects
   getProjects: async (filters = {}) => {
-  const token = getAuthToken();
-  const queryParams = new URLSearchParams();
-  
-  if (filters.status) queryParams.append('status', filters.status);
-  if (filters.projectType) queryParams.append('projectType', filters.projectType);
-  
-  const url = `${API_BASE_URL}/projects${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-  
-  console.log('🌐 Fetching from:', url); // Debug log
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-  
-  const result = await handleResponse(response);
-  console.log('📥 API Response:', result); // Debug log
-  return result;
-},
+    const token = getAuthToken();
+    const queryParams = new URLSearchParams();
+    
+    if (filters.status) queryParams.append('status', filters.status);
+    if (filters.projectType) queryParams.append('projectType', filters.projectType);
+    
+    const url = `${API_BASE_URL}/projects${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    
+    console.log('🌐 Fetching from:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const result = await handleResponse(response);
+    console.log('📥 API Response:', result);
+    return result;
+  },
 
   // Get single project
   getProjectById: async (id) => {
@@ -94,57 +78,53 @@ export const projectAPI = {
     return handleResponse(response);
   },
 
-
-
-// Then update your createProject function:
-createProject: async (projectData, file = null) => {
-  const token = getAuthToken();
-  
-  // Create a unique key for this request
-  const requestKey = `create-${projectData.projectId}-${projectData.name}`;
-  
-  return deduplicateRequest(requestKey, async () => {
-    const body = {
-      projectId: projectData.projectId,
-      name: projectData.name,
-      clientName: projectData.client,
-      projectType: projectData.type,
-      budget: projectData.budget || null,
-      description: projectData.description || null,
-      startDate: projectData.startDate || null,
-      endDate: projectData.endDate || null,
-      location: projectData.location || null,
-      assignedUserId: projectData.assignedEmployee || null
-    };
+  // Create project
+  createProject: async (projectData, file = null) => {
+    const token = getAuthToken();
     
-    console.log('📤 Creating project:', projectData.projectId);
+    const requestKey = `create-${projectData.projectId}-${projectData.name}`;
     
-    const response = await fetch(`${API_BASE_URL}/projects`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-    
-    const result = await handleResponse(response);
-    
-    // Upload file if exists
-    if (file && result.project) {
-      try {
-        console.log('📤 Uploading file for project:', result.project.id);
-        await projectAPI.uploadFile(result.project.id, file);
-        console.log('✅ File uploaded successfully');
-      } catch (err) {
-        console.error('❌ File upload failed:', err);
-        throw new Error(`Project created but file upload failed: ${err.error || err.message}`);
+    return deduplicateRequest(requestKey, async () => {
+      const body = {
+        projectId: projectData.projectId,
+        name: projectData.name,
+        clientName: projectData.client,
+        projectType: projectData.type,
+        budget: projectData.budget || null,
+        description: projectData.description || null,
+        startDate: projectData.startDate || null,
+        endDate: projectData.endDate || null,
+        location: projectData.location || null,
+        assignedUserId: projectData.assignedEmployee || null
+      };
+      
+      console.log('📤 Creating project:', projectData.projectId);
+      
+      const response = await fetch(`${API_BASE_URL}/projects`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      
+      const result = await handleResponse(response);
+      
+      if (file && result.project) {
+        try {
+          console.log('📤 Uploading file for project:', result.project.id);
+          await projectAPI.uploadFile(result.project.id, file);
+          console.log('✅ File uploaded successfully');
+        } catch (err) {
+          console.error('❌ File upload failed:', err);
+          throw new Error(`Project created but file upload failed: ${err.error || err.message}`);
+        }
       }
-    }
-    
-    return result;
-  });
-},
+      
+      return result;
+    });
+  },
 
   // Upload file
   uploadFile: async (projectId, file) => {
@@ -159,7 +139,6 @@ createProject: async (projectData, file = null) => {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
-        // Don't set Content-Type - browser will set it with boundary
       },
       body: formData
     });
@@ -168,54 +147,52 @@ createProject: async (projectData, file = null) => {
   },
 
   // Update project
-updateProject: async (id, projectData, file = null) => {
-  const token = getAuthToken();
-  
-  const body = {
-    name: projectData.name,
-    clientName: projectData.client,
-    projectType: projectData.type,
-    budget: projectData.budget || null,
-    description: projectData.description || null,
-    startDate: projectData.startDate || null,
-    endDate: projectData.endDate || null,
-    location: projectData.location || null,
-    status: projectData.status || null,
-    // ✅ FIX: Map assignedEmployee to assignedUserId
-    assignedUserId: projectData.assignedEmployee || null  // Changed from assignedEmployee
-  };
-  
-  const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  });
-  
-  const result = await handleResponse(response);
-  
-  // Upload file if exists
-  if (file && result.project) {
-    try {
-      console.log('Uploading new file for project:', result.project.id);
-      await projectAPI.uploadFile(result.project.id, file);
-      console.log('File uploaded successfully');
-    } catch (err) {
-      console.error('File upload failed:', err);
-      throw new Error(`Project updated but file upload failed: ${err.error || err.message}`);
+  updateProject: async (id, projectData, file = null) => {
+    const token = getAuthToken();
+    
+    const body = {
+  name: projectData.name,
+  clientName: projectData.client,
+  projectType: projectData.type,
+  budget: projectData.budget || null,
+  description: projectData.description || null,
+  startDate: projectData.startDate || null,
+  endDate: projectData.endDate || null,
+  location: projectData.location || null,
+  status: projectData.status || null,
+  assignedUserId: projectData.assignedEmployee || null,
+  actualProgress: projectData.progress !== undefined ? parseInt(projectData.progress) : undefined // ✅ Add this
+};
+    
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    
+    const result = await handleResponse(response);
+    
+    if (file && result.project) {
+      try {
+        console.log('Uploading new file for project:', result.project.id);
+        await projectAPI.uploadFile(result.project.id, file);
+        console.log('File uploaded successfully');
+      } catch (err) {
+        console.error('File upload failed:', err);
+        throw new Error(`Project updated but file upload failed: ${err.error || err.message}`);
+      }
     }
-  }
-  
-  return result;
-},
+    
+    return result;
+  },
 
   // Update project status
   updateProjectStatus: async (id, status) => {
     const token = getAuthToken();
     
-    // Transform frontend status to backend format
     const statusMap = {
       'Planning': 'PENDING',
       'In Progress': 'ONGOING',
@@ -230,6 +207,24 @@ updateProject: async (id, projectData, file = null) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ status: backendStatus })
+    });
+    
+    return handleResponse(response);
+  },
+
+  // ✅ NEW: Update project progress
+  updateProjectProgress: async (id, progress) => {
+    const token = getAuthToken();
+    
+    console.log('📤 Updating progress for project:', id, 'to', progress);
+    
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/progress`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ actualProgress: progress })
     });
     
     return handleResponse(response);
@@ -294,5 +289,4 @@ updateProject: async (id, projectData, file = null) => {
     
     return handleResponse(response);
   },
-  
 };

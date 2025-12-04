@@ -1,28 +1,84 @@
 import { Bell, LogOut, X } from 'lucide-react';
-import { useState } from 'react'
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const navigate =useNavigate();
+  const [companyName, setCompanyName] = useState('Loading...');
+  const navigate = useNavigate();
+
+  // Get company name from stored user data
+  useEffect(() => {
+    try {
+      const userDataString = sessionStorage.getItem('user') || localStorage.getItem('user');
+      
+      if (userDataString) {
+        const userData = JSON.parse(userDataString);
+        
+        // Get company name from user data (set during login)
+        if (userData.companyName) {
+          setCompanyName(userData.companyName);
+        } else if (userData.company?.name) {
+          setCompanyName(userData.company.name);
+        } else {
+          // Fallback: Fetch from API if not in user data
+          fetchCompanyName(userData.companyId);
+        }
+      } else {
+        setCompanyName('Interiors');
+      }
+    } catch (error) {
+      console.error('Error loading company name:', error);
+      setCompanyName('Interiors');
+    }
+  }, []);
+
+  // Fallback function to fetch company name from API
+  const fetchCompanyName = async (companyId) => {
+    if (!companyId) {
+      setCompanyName('Interiors');
+      return;
+    }
+
+    try {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCompanyName(data.name || 'Interiors');
+      } else {
+        setCompanyName('Interiors');
+      }
+    } catch (error) {
+      console.error('Error fetching company name:', error);
+      setCompanyName('Interiors');
+    }
+  };
 
   const handleLogout = () => {
     setShowLogoutModal(true);
   };
 
   const confirmLogout = () => {
-  // Clear localStorage
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  
-  // Close modal
-  setShowLogoutModal(false);
-  
-  // Navigate and reload
-  navigate("/");
-  window.location.reload();
-};
+    // Clear all storage
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Close modal
+    setShowLogoutModal(false);
+    
+    // Navigate and reload
+    navigate("/");
+    window.location.reload();
+  };
 
   const cancelLogout = () => {
     setShowLogoutModal(false);
@@ -41,7 +97,7 @@ const Navbar = () => {
             <div className="flex items-center space-x-8">
               <div className="flex-shrink-0 flex items-center gap-3">
                 <h1 className="text-xl sm:text-3xl uppercase font-black text-slate-900 tracking-tight">
-                  Interiors
+                 Welcome <span className=   'text-l sm:text-3xl underline tracking-tight text-black'> {companyName} ! </span> 
                 </h1>
               </div>
             </div>
@@ -106,7 +162,7 @@ const Navbar = () => {
                 </button>
                 <button
                   onClick={confirmLogout}
-                  className="px-6 py-2.5  bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors duration-200 uppercase text-sm tracking-wide"
+                  className="px-6 py-2.5 bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors duration-200 uppercase text-sm tracking-wide"
                 >
                   Logout
                 </button>
@@ -119,4 +175,4 @@ const Navbar = () => {
   );
 }
 
-export default Navbar
+export default Navbar;

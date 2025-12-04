@@ -60,7 +60,7 @@ export default function EmployeeLogin() {
         
         {/* Content Overlay */}
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12 w-full">
-          <h1 className="text-6xl font-bold mb-6 tracking-wider uppercase">Employee</h1>
+          <h1 className="text-6xl font-bold mb-6 tracking-wider uppercase">Site-Engineer</h1>
           <div className="w-16 h-1 bg-amber-400 mb-6"></div>
           <h2 className="text-2xl font-light mb-4">Login Portal</h2>
           <p className="text-center text-lg font-light max-w-md">
@@ -142,13 +142,6 @@ export default function EmployeeLogin() {
               </button>
             </form>
 
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                Demo Credentials
-              </p>
-              <p className="text-sm text-gray-700">Username: demo</p>
-              <p className="text-sm text-gray-700">Password: demo123</p>
-            </div>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">

@@ -88,28 +88,28 @@ const handleStatusChangeInline = async (projectId, newStatus) => {
     
     // Transform backend data to match frontend format
     const transformedProjects = data.projects.map(project => ({
-      id: project.projectId,
-      dbId: project.id,
-      name: project.name,
-      client: project.clientName,
-      type: project.projectType,
-      status: transformStatus(project.status),
-      progress: calculateProgress(project),
-      budget: project.budget || 0,
-      spent: calculateSpent(project),
-      startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
-      endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
-      location: project.location || '',
-      team: project.assignedEngineer ? [project.assignedEngineer.name] : [],
-      assignedEmployee: project.assignedEngineer ? project.assignedEngineer.id.toString() : '',
-      assignedEngineerName: project.assignedEngineer ? project.assignedEngineer.name : '',
-      assignedEngineerEmpId: project.assignedEngineer ? project.assignedEngineer.empId : '',
-      tasks: { 
-        total: project._count?.materialUsed || 0, 
-        completed: 0 
-      },
-      description: project.description || ''
-    }));
+  id: project.projectId,
+  dbId: project.id,
+  name: project.name,
+  client: project.clientName,
+  type: project.projectType,
+  status: transformStatus(project.status),
+  progress: project.actualProgress || 0, // ✅ Use actualProgress from database
+  budget: project.budget || 0,
+  spent: calculateSpent(project),
+  startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
+  endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
+  location: project.location || '',
+  team: project.assignedEngineer ? [project.assignedEngineer.name] : [],
+  assignedEmployee: project.assignedEngineer ? project.assignedEngineer.id.toString() : '',
+  assignedEngineerName: project.assignedEngineer ? project.assignedEngineer.name : '',
+  assignedEngineerEmpId: project.assignedEngineer ? project.assignedEngineer.empId : '',
+  tasks: { 
+    total: project._count?.materialUsed || 0, 
+    completed: 0 
+  },
+  description: project.description || ''
+}));
     
     console.log('✅ Setting projects state with:', transformedProjects.length, 'projects');
     setProjects(transformedProjects);
@@ -148,25 +148,9 @@ const handleStatusChangeInline = async (projectId, newStatus) => {
   };
 
   const calculateProgress = (project) => {
-    if (project.status === 'COMPLETED') return 100;
-    if (project.status === 'PENDING') return 0;
-    
-    // Calculate based on date progress
-    if (project.startDate && project.endDate) {
-      const start = new Date(project.startDate);
-      const end = new Date(project.endDate);
-      const now = new Date();
-      
-      if (now < start) return 0;
-      if (now > end) return 100;
-      
-      const total = end - start;
-      const elapsed = now - start;
-      return Math.round((elapsed / total) * 100);
-    }
-    
-    return 50; // Default for in-progress projects
-  };
+  // ✅ Use actualProgress from database
+  return project.actualProgress || 0;
+};
 
   const calculateSpent = (project) => {
     // This would come from finance records in a real implementation
@@ -211,6 +195,15 @@ const handleStatusChangeInline = async (projectId, newStatus) => {
     return matchesSearch && matchesTab && matchesFilter;
   });
 
+  const handleProgressUpdate = async () => {
+  try {
+    console.log('🔄 Reloading projects after progress update...');
+    await loadProjects();
+    console.log('✅ Projects reloaded');
+  } catch (err) {
+    console.error('❌ Failed to reload projects:', err);
+  }
+};
   const handleCreateProject = async (file) => {
   if (!newProject.name || !newProject.projectId || !newProject.client || !newProject.location || !newProject.assignedEmployee) {
     throw new Error('Please fill in all required fields (Name, ID, Client, Location, and Site Engineer)');
@@ -449,16 +442,17 @@ const handleEditProject = (project) => {
                 </div>
               ) : (
                 filteredProjects.map(project => (
-                  <ProjectCard
-  key={project.id}
-  project={project}
-  onView={setSelectedProject}
-  onEdit={handleEditProject}
-  onDelete={handleDeleteProject}
-  getStatusColor={getStatusColor}
-  getStatusIcon={getStatusIcon}
-  onStatusChange={handleStatusChangeInline}  // Add this prop
-/>
+  <ProjectCard
+    key={project.id}
+    project={project}
+    onView={setSelectedProject}
+    onEdit={handleEditProject}
+    onDelete={handleDeleteProject}
+    getStatusColor={getStatusColor}
+    getStatusIcon={getStatusIcon}
+    onStatusChange={handleStatusChangeInline}
+    onProgressUpdate={handleProgressUpdate}  // ✅ Add this new prop
+  />
                 ))
               )}
             </div>
