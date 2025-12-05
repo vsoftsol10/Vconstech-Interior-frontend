@@ -18,7 +18,7 @@ const Dashboard = () => {
     contracts: []
   });
 
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = 'https://vconstech-interior-backend.onrender.com/api';
   
   const getAuthToken = () => localStorage.getItem('authToken') || localStorage.getItem('token');
 

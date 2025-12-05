@@ -4,7 +4,7 @@ import labourApi from '../../api/labourAPI'
 import Navbar from '../../components/common/Navbar'
 import SidePannel from '../../components/common/SidePannel'
 
-const API_URL = 'http://localhost:5000/api/labours'
+const API_URL = 'https://vconstech-interior-backend.onrender.com/api/labours'
 const AdminLabourManagemet = () => {
  const [labourers, setLabourers] = useState([])
   const [loading, setLoading] = useState(true)
