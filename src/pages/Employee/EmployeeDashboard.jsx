@@ -17,7 +17,7 @@ const EmployeeDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vconstech-interior-backend.onrender.com/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vconstech-interior-backend-1.onrender.com/api';
   
   const currentDate = new Date().toLocaleDateString('en-IN', { 
     weekday: 'long', 

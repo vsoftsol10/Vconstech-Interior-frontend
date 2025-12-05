@@ -1,5 +1,5 @@
 // src/api/materialAPI.js
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vconstech-interior-backend.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vconstech-interior-backend-1.onrender.com/api';
 import { getAuthToken } from '../utils/auth';
 
 // Helper to handle API responses
