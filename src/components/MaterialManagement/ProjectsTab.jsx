@@ -11,23 +11,18 @@ const ProjectsTab = () => {
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const dropdownRef = useRef(null);
   const [requestStatusFilter, setRequestStatusFilter] = useState("All");
-  const [materials, setMaterials] = useState([]); // ✅ ADD THIS LINE
-  // Add Material Modal States
+  const [materials, setMaterials] = useState([]);
   const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
   const [newMaterial, setNewMaterial] = useState({
     materialId: "",
     quantity: "",
   });
   
-  // Filter State
   const [statusFilter, setStatusFilter] = useState("All");
-  
-  // Status Update Modal States
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedMaterialIndex, setSelectedMaterialIndex] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [userRole, setUserRole] = useState(null);
-  // Data States
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectMaterials, setProjectMaterials] = useState([]);
@@ -39,77 +34,60 @@ const ProjectsTab = () => {
     ? materialRequests 
     : materialRequests.filter(req => req.status === requestStatusFilter);
 
-useEffect(() => {
-  // ✅ Get user role from token
-  const token = localStorage.getItem('token');
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      setUserRole(payload.role);
-      console.log('User role:', payload.role);
-    } catch (e) {
-      console.error('Error parsing token:', e);
-      setUserRole('Site_Engineer'); // default fallback
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role);
+        console.log('User role:', payload.role);
+      } catch (e) {
+        console.error('Error parsing token:', e);
+        setUserRole('Site_Engineer');
+      }
     }
-  }
-  
-  fetchProjects();
-  fetchMaterialRequests();
-  fetchMaterials();
-}, []);
+    
+    fetchProjects();
+    fetchMaterialRequests();
+    fetchMaterials();
+  }, []);
 
-  // Fetch project materials when project is selected
   useEffect(() => {
     if (selectedProject) {
       fetchProjectMaterials(selectedProject);
     }
   }, [selectedProject]);
 
-  // ✅ ADD THIS ENTIRE FUNCTION
-const fetchMaterials = async () => {
-  try {
-    const data = await materialAPI.getAll();
-    if (data.projects || data.success) {
-      setMaterials(data.materials || []);
-      console.log('Materials fetched:', data.materials);
-    }
-  } catch (err) {
-    console.error('Error fetching materials:', err);
-  }
-};
-
-const fetchProjects = async () => {
-  try {
-    setLoading(true);
-    const data = await projectAPI.getProjects();
-    
-    console.log('🔍 Raw projects data:', data);
-    console.log('🔍 data.success:', data.success);
-    console.log('🔍 data.projects:', data.projects);
-    
-    // ✅ FIX: Check for projects array directly, not just success flag
-    if (data.projects && Array.isArray(data.projects)) {
-      console.log('📋 Projects array from API:', data.projects);
-      console.log('📋 Projects count from API:', data.projects.length);
-      
-      setProjects(data.projects);
-      console.log('✅ setProjects called with:', data.projects.length, 'projects');
-      
-      if (data.projects.length > 0) {
-        console.log('✅ First project:', data.projects[0]);
-        console.log('✅ Setting selected project to:', data.projects[0].id);
-        setSelectedProject(data.projects[0].id);
+  const fetchMaterials = async () => {
+    try {
+      const data = await materialAPI.getAll();
+      if (data.projects || data.success) {
+        setMaterials(data.materials || []);
+        console.log('Materials fetched:', data.materials);
       }
-    } else {
-      console.error('❌ No projects array in response');
+    } catch (err) {
+      console.error('Error fetching materials:', err);
     }
-  } catch (err) {
-    console.error('❌ Error fetching projects:', err);
-    setError('Failed to load projects');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const data = await projectAPI.getProjects();
+      
+      if (data.projects && Array.isArray(data.projects)) {
+        setProjects(data.projects);
+        if (data.projects.length > 0) {
+          setSelectedProject(data.projects[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+      setError('Failed to load projects');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchProjectMaterials = async (projectId) => {
     try {
@@ -127,68 +105,49 @@ const fetchProjects = async () => {
   };
 
   const fetchMaterialRequests = async () => {
-  try {
-    setLoading(true);
-    console.log('Fetching material requests...');
-    
-    // ✅ Get user role from localStorage or token
-    const token = localStorage.getItem('token');
-    let userRole = 'Site_Engineer'; // default
-    
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        userRole = payload.role;
-        console.log('User role:', userRole);
-      } catch (e) {
-        console.error('Error parsing token:', e);
-      }
-    }
-    
-    // ✅ Fetch based on role
-    let data;
-    if (userRole.toUpperCase() === 'ADMIN') {
-      // Admin can see ALL requests
-      data = await materialRequestAPI.getAll();
-    } else {
-      // Site_Engineer can only see their own requests
-      data = await materialRequestAPI.getMyRequests();
-    }
-    
-    console.log('Received data:', data);
-    
-    if (data.success) {
-      console.log('Material requests count:', data.count);
-      console.log('Material requests:', data.requests);
-      setMaterialRequests(data.requests || []);
-    } else {
-      console.error('Failed to fetch requests:', data.error);
-      setError(data.error || 'Failed to load material requests');
-    }
-  } catch (err) {
-    console.error('Error fetching material requests:', err);
-    console.error('Error details:', err.response?.data || err.message);
-    
-    // ✅ Don't show permission error to user if they're just viewing their own requests
-    if (err.response?.status === 403) {
-      console.warn('Permission denied - fetching own requests instead');
-      try {
-        const data = await materialRequestAPI.getMyRequests();
-        if (data.success) {
-          setMaterialRequests(data.requests || []);
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      let userRole = 'Site_Engineer';
+      
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userRole = payload.role;
+        } catch (e) {
+          console.error('Error parsing token:', e);
         }
-      } catch (retryErr) {
+      }
+      
+      let data;
+      if (userRole.toUpperCase() === 'ADMIN') {
+        data = await materialRequestAPI.getAll();
+      } else {
+        data = await materialRequestAPI.getMyRequests();
+      }
+      
+      if (data.success) {
+        setMaterialRequests(data.requests || []);
+      }
+    } catch (err) {
+      console.error('Error fetching material requests:', err);
+      if (err.response?.status === 403) {
+        try {
+          const data = await materialRequestAPI.getMyRequests();
+          if (data.success) {
+            setMaterialRequests(data.requests || []);
+          }
+        } catch (retryErr) {
+          setError('Failed to load material requests');
+        }
+      } else {
         setError('Failed to load material requests');
       }
-    } else {
-      setError('Failed to load material requests');
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -200,36 +159,25 @@ const fetchProjects = async () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-
-// ✅ FIX: Ensure projects array exists before filtering
-const filteredProjects = React.useMemo(() => {
-  console.log('🔄 Recalculating filtered projects, projects:', projects);
-  
-  if (!projects || projects.length === 0) {
-    return [];
-  }
-  
-  if (searchTerm.trim() === "") {
-    return projects;
-  }
-  
-  return projects.filter(project => {
-    const searchLower = searchTerm.toLowerCase();
-    const name = (project.name || '').toLowerCase();
-    const status = (project.status || '').toLowerCase();
-    return name.includes(searchLower) || status.includes(searchLower);
-  });
-}, [projects, searchTerm]);
-
-console.log('🔎 Search term:', searchTerm);
-console.log('📊 Filtered projects:', filteredProjects);
-console.log('🔎 Search term:', searchTerm); // ✅ ADD THIS
-console.log('📊 Filtered projects:', filteredProjects); // ✅ ADD THIS
+  const filteredProjects = React.useMemo(() => {
+    if (!projects || projects.length === 0) {
+      return [];
+    }
+    
+    if (searchTerm.trim() === "") {
+      return projects;
+    }
+    
+    return projects.filter(project => {
+      const searchLower = searchTerm.toLowerCase();
+      const name = (project.name || '').toLowerCase();
+      const status = (project.status || '').toLowerCase();
+      return name.includes(searchLower) || status.includes(searchLower);
+    });
+  }, [projects, searchTerm]);
 
   const selectedProjectData = projects.find(p => p.id === selectedProject);
-console.log('🏗️ Projects state:', projects);
-console.log('🏗️ Projects length:', projects.length);
-  // Filter project materials by status
+  
   const filteredProjectMaterials = statusFilter === "All" 
     ? projectMaterials 
     : projectMaterials.filter(pm => pm.status === statusFilter);
@@ -269,7 +217,6 @@ console.log('🏗️ Projects length:', projects.length);
       }
     } catch (err) {
       console.error('Error accepting request:', err);
-      console.error('Error response:', err.response?.data);
       alert(`Failed to accept request: ${err.response?.data?.error || err.message}`);
     }
   };
@@ -291,7 +238,6 @@ console.log('🏗️ Projects length:', projects.length);
         fetchMaterialRequests();
       } catch (err) {
         console.error('Error rejecting request:', err);
-        console.error('Error response:', err.response?.data);
         alert(`Failed to reject request: ${err.response?.data?.error || err.message}`);
       }
     }
@@ -302,12 +248,11 @@ console.log('🏗️ Projects length:', projects.length);
     setRejectReason("");
     setSelectedRequestId(null);
   };
-  
-  const handleStatusUpdateClick = (index) => {
-    const materialToUpdate = filteredProjectMaterials[index];
-    setSelectedMaterialIndex(projectMaterials.indexOf(materialToUpdate));
-    setNewStatus(materialToUpdate.status);
+
+  const handleStatusUpdateClick = (idx) => {
+    setSelectedMaterialIndex(idx);
     setShowStatusModal(true);
+    setNewStatus("");
   };
   
   const handleStatusUpdateConfirm = async () => {
@@ -347,7 +292,6 @@ console.log('🏗️ Projects length:', projects.length);
       {/* Top Section */}
       <div className="bg-white rounded-lg md:rounded-xl shadow p-3 sm:p-4 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
-        
           <div className="flex-1 w-full relative" ref={dropdownRef}>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               Select Project
@@ -407,7 +351,6 @@ console.log('🏗️ Projects length:', projects.length);
             </div>
           </div>
           
-          {/* Add Material Button - ✅ ADMIN CAN MANUALLY ADD MATERIALS */}
           <button
             onClick={() => setShowAddMaterialModal(true)}
             disabled={!selectedProject}
@@ -421,14 +364,13 @@ console.log('🏗️ Projects length:', projects.length);
         </div>
       </div>
 
-      {/* Materials Allocated Table - ✅ SHOWS MANUALLY ADDED MATERIALS */}
+      {/* Materials Allocated Table */}
       <div className="bg-white rounded-lg md:rounded-xl shadow overflow-hidden">
         <div className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">
             Materials Allocated
           </h2>
           
-          {/* Status Filter */}
           <div className="flex gap-2 flex-wrap">
             {["All", "ACTIVE", "COMPLETED", "NOT_USED"].map((status) => (
               <button
@@ -446,20 +388,11 @@ console.log('🏗️ Projects length:', projects.length);
           </div>
         </div>
         
-        {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full text-sm divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {[
-                  "Project Name",
-                  "Material",
-                  "Assigned",
-                  "Used",
-                  "Cost",
-                  "Status",
-                  "Action",
-                ].map((header) => (
+                {["Project Name", "Material", "Assigned", "Used", "Cost", "Status"].map((header) => (
                   <th
                     key={header}
                     className="px-4 lg:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs whitespace-nowrap"
@@ -472,25 +405,19 @@ console.log('🏗️ Projects length:', projects.length);
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm">
+                  <td colSpan="6" className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm">
                     Loading...
                   </td>
                 </tr>
               ) : filteredProjectMaterials.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan="7"
-                    className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm"
-                  >
+                  <td colSpan="6" className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm">
                     {statusFilter === "All" ? "No materials allocated yet" : `No ${statusFilter.toLowerCase()} materials found`}
                   </td>
                 </tr>
               ) : (
-                filteredProjectMaterials.map((pm, idx) => (
-                  <tr
-                    key={pm.id}
-                    className="hover:bg-gray-50 transition-colors duration-200"
-                  >
+                filteredProjectMaterials.map((pm) => (
+                  <tr key={pm.id} className="hover:bg-gray-50 transition-colors duration-200">
                     <td className="px-4 lg:px-6 py-3 text-gray-900 font-medium text-sm">
                       {pm.project?.name || 'N/A'}
                     </td>
@@ -521,14 +448,6 @@ console.log('🏗️ Projects length:', projects.length);
                         {pm.status === "NOT_USED" ? "Not Used" : pm.status}
                       </span>
                     </td>
-                    <td className="px-4 lg:px-6 py-3">
-                      <button
-                        onClick={() => handleStatusUpdateClick(idx)}
-                        className="px-3 py-1.5 bg-yellow-500 text-black text-xs font-medium rounded-lg hover:bg-yellow-400 transition-colors whitespace-nowrap"
-                      >
-                        Update Status
-                      </button>
-                    </td>
                   </tr>
                 ))
               )}
@@ -536,7 +455,6 @@ console.log('🏗️ Projects length:', projects.length);
           </table>
         </div>
 
-        {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-gray-200">
           {loading ? (
             <div className="px-4 py-8 text-center text-gray-500 text-sm">
@@ -592,114 +510,61 @@ console.log('🏗️ Projects length:', projects.length);
         </div>
       </div>
 
-      {/* Material Requests Table - ✅ ADMIN CAN ACCEPT/REJECT REQUESTS */}
+      {/* Global Materials List Section */}
       <div className="bg-white rounded-lg md:rounded-xl shadow overflow-hidden">
         <div className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border-b border-gray-200">
-          <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-3">
-            Material Requests
+          <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">
+            Global Materials List
           </h2>
-          <div className="flex gap-2 flex-wrap">
-            {["All", "PENDING", "APPROVED", "REJECTED"].map((status) => (
-              <button
-                key={status}
-                onClick={() => setRequestStatusFilter(status)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                  requestStatusFilter === status
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {status.charAt(0) + status.slice(1).toLowerCase()}
-              </button>
-            ))}
-          </div>
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">
+            All available materials in the system
+          </p>
         </div>
         
-        {/* Desktop Table View */}
-        <div className="hidden lg:block overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full text-sm divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {["Engineer", "Project Name", "Material Requested", "Quantity", "Status", "Action"].map(
-                  (header) => (
-                    <th
-                      key={header}
-                      className="px-4 lg:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs whitespace-nowrap"
-                    >
-                      {header}
-                    </th>
-                  )
-                )}
+                {["Material Name", "Category", "Unit", "Default Rate", "Description"].map((header) => (
+                  <th
+                    key={header}
+                    className="px-4 lg:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs whitespace-nowrap"
+                  >
+                    {header}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm">
+                  <td colSpan="5" className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm">
                     Loading...
                   </td>
                 </tr>
-              ) : filteredMaterialRequests.length === 0 ? (
+              ) : materials.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan="6"
-                    className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm"
-                  >
-                    No material requests yet
+                  <td colSpan="5" className="px-4 lg:px-6 py-8 text-center text-gray-500 text-sm">
+                    No materials found
                   </td>
                 </tr>
               ) : (
-                filteredMaterialRequests.map((request) => (
-                  <tr
-                    key={request.id}
-                    className="hover:bg-gray-50 transition-colors duration-200"
-                  >
+                materials.map((material) => (
+                  <tr key={material.id} className="hover:bg-gray-50 transition-colors duration-200">
                     <td className="px-4 lg:px-6 py-3 text-gray-900 font-medium text-sm">
-                      {request.employee?.name || 'N/A'}
+                      {material.name}
                     </td>
-                    <td className="px-4 lg:px-6 py-3 text-gray-900 text-sm">
-                      {request.project?.name || request.projectName || 'N/A'}
+                    <td className="px-4 lg:px-6 py-3 text-gray-700 text-sm">
+                      {material.category || 'N/A'}
                     </td>
-                    <td className="px-4 lg:px-6 py-3 text-gray-900 text-sm">
-                      {request.name}
+                    <td className="px-4 lg:px-6 py-3 text-gray-700 text-sm">
+                      {material.unit}
                     </td>
-                    <td className="px-4 lg:px-6 py-3 text-gray-900 whitespace-nowrap text-sm">
-                      {request.quantity || 'N/A'} {request.unit}
+                    <td className="px-4 lg:px-6 py-3 text-gray-900 font-semibold whitespace-nowrap text-sm">
+                      ₹{material.defaultRate?.toLocaleString() || '0'}
                     </td>
-                    <td className="px-4 lg:px-6 py-3">
-                      <span
-                        className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
-                          request.status === "APPROVED"
-                            ? "bg-green-100 text-green-800"
-                            : request.status === "REJECTED"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {request.status}
-                      </span>
-                    </td>
-                    <td className="px-4 lg:px-6 py-3">
-                      {request.status === "PENDING" ? (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleAcceptRequest(request.id)}
-                            className="px-3 py-1.5 bg-[#ffbe2a] text-black text-xs font-medium rounded-lg hover:bg-[#e6ab25] transition-colors whitespace-nowrap"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => handleRejectClick(request.id)}
-                            className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-500">
-                          {request.status}
-                        </span>
-                      )}
+                    <td className="px-4 lg:px-6 py-3 text-gray-600 text-sm">
+                      {material.description || 'No description'}
                     </td>
                   </tr>
                 ))
@@ -708,60 +573,38 @@ console.log('🏗️ Projects length:', projects.length);
           </table>
         </div>
 
-        {/* Mobile/Tablet Card View */}
-        <div className="lg:hidden divide-y divide-gray-200">
+        <div className="md:hidden divide-y divide-gray-200">
           {loading ? (
             <div className="px-4 py-8 text-center text-gray-500 text-sm">
               Loading...
             </div>
-          ) : filteredMaterialRequests.length === 0 ? (
+          ) : materials.length === 0 ? (
             <div className="px-4 py-8 text-center text-gray-500 text-sm">
-              No material requests yet
+              No materials found
             </div>
           ) : (
-            filteredMaterialRequests.map((request) => (
-              <div key={request.id} className="p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 text-sm">{request.employee?.name || 'N/A'}</div>
-                    <div className="text-gray-600 text-sm mt-0.5">{request.project?.name || request.projectName || 'N/A'}</div>
-                  </div>
-                  <span
-                    className={`inline-block px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ml-2 flex-shrink-0 ${
-                      request.status === "APPROVED"
-                        ? "bg-green-100 text-green-800"
-                        : request.status === "REJECTED"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {request.status}
+            materials.map((material) => (
+              <div key={material.id} className="p-4 space-y-2.5">
+                <div className="font-medium text-gray-900 text-sm">
+                  {material.name}
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Category:</span>
+                  <span className="text-gray-900">{material.category || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Unit:</span>
+                  <span className="text-gray-900">{material.unit}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Rate:</span>
+                  <span className="text-gray-900 font-semibold">
+                    ₹{material.defaultRate?.toLocaleString() || '0'}
                   </span>
                 </div>
-                <div className="space-y-1.5 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Material:</span>
-                    <span className="text-gray-900 font-medium">{request.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Quantity:</span>
-                    <span className="text-gray-900 font-medium">{request.quantity || 'N/A'} {request.unit}</span>
-                  </div>
-                </div>
-                {request.status === "PENDING" && (
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={() => handleAcceptRequest(request.id)}
-                      className="flex-1 px-3 py-2 bg-[#ffbe2a] text-black text-sm font-medium rounded-lg hover:bg-[#e6ab25] transition-colors"
-                    >
-                      Accept
-                    </button>
-                    <button
-                      onClick={() => handleRejectClick(request.id)}
-                      className="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      Reject
-                    </button>
+                {material.description && (
+                  <div className="text-xs text-gray-600 mt-2 pt-2 border-t border-gray-100">
+                    {material.description}
                   </div>
                 )}
               </div>
@@ -770,7 +613,7 @@ console.log('🏗️ Projects length:', projects.length);
         </div>
       </div>
 
-      {/* Reject Modal */}
+      {/* Modals */}
       {showRejectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6">
@@ -807,7 +650,6 @@ console.log('🏗️ Projects length:', projects.length);
         </div>
       )}
       
-      {/* Status Update Modal */}
       {showStatusModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6">
@@ -876,7 +718,6 @@ console.log('🏗️ Projects length:', projects.length);
         </div>
       )}
       
-      {/* Add Material Modal - ✅ ADMIN CAN MANUALLY ADD MATERIALS */}
       {showAddMaterialModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6">
@@ -888,30 +729,28 @@ console.log('🏗️ Projects length:', projects.length);
             </p>
             
             <div className="space-y-4">
-              {/* Material Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Select Material
                 </label>
                 <select
-  value={newMaterial.materialId}
-  onChange={(e) => setNewMaterial({ ...newMaterial, materialId: e.target.value })}
-  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
->
-  <option value="">Choose a material...</option>
-  {materials.length === 0 ? (
-    <option disabled>Loading materials...</option>
-  ) : (
-    materials.map((material) => (
-      <option key={material.id} value={material.id}>
-        {material.name} ({material.unit})
-      </option>
-    ))
-  )}
-</select>
+                  value={newMaterial.materialId}
+                  onChange={(e) => setNewMaterial({ ...newMaterial, materialId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                >
+                  <option value="">Choose a material...</option>
+                  {materials.length === 0 ? (
+                    <option disabled>Loading materials...</option>
+                  ) : (
+                    materials.map((material) => (
+                      <option key={material.id} value={material.id}>
+                        {material.name} ({material.unit})
+                      </option>
+                    ))
+                  )}
+                </select>
               </div>
               
-              {/* Quantity Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Quantity

@@ -1,6 +1,6 @@
 // src/services/labourApi.js
 
-const API_URL = 'https://vconstech-interior-backend-1.onrender.com/api/labours';
+const API_URL = 'http://localhost:5000/api/labours';
 
 // Helper function to get auth token
 const getAuthHeaders = () => {

@@ -5,6 +5,7 @@ import MaterialForm from '../../components/MaterialManagement/MaterialForm';
 import ModalMaterial from '../../components/MaterialManagement/ModalMaterial';
 import Navbar from '../../components/common/Navbar';
 import SidePannel from '../../components/common/SidePannel';
+import RequestTab from '../../components/MaterialManagement/RequestTab';
 
 // Main App Component
 const MaterialManagement = () => {
@@ -47,7 +48,7 @@ const MaterialManagement = () => {
   const categories = ['All', 'Paint', 'Wood', 'Flooring', 'Electrical', 'Fabric', 'Hardware', 'Plumbing'];
 
   const [newMaterial, setNewMaterial] = useState({
-    name: '', category: 'Paint', unit: 'piece', defaultRate: '', vendor: '', description: ''
+    name: '', category: '', unit: 'piece', defaultRate: '', vendor: '', description: ''
   });
 
   const [newProjectMaterial, setNewProjectMaterial] = useState({
@@ -99,7 +100,7 @@ const MaterialManagement = () => {
   const handleAddMaterial = () => {
     const newId = `MAT${String(materials.length + 1).padStart(3, '0')}`;
     setMaterials([...materials, { id: newId, ...newMaterial }]);
-    setNewMaterial({ name: '', category: 'Paint', unit: 'piece', defaultRate: '', vendor: '', description: '' });
+    setNewMaterial({ name: '', category: '', unit: 'piece', defaultRate: '', vendor: '', description: '' });
     setShowAddMaterial(false);
   };
    
@@ -172,7 +173,7 @@ const MaterialManagement = () => {
         {/* Tabs Section */}
         <div className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 overflow-x-auto">
           <div className="flex space-x-4 sm:space-x-8">
-            {['dashboard', 'projects'].map(tab => (
+            {['dashboard', 'projects', 'Requests'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -210,6 +211,18 @@ const MaterialManagement = () => {
               onLogUsage={() => setShowUsageLog(true)}
             />
           )}
+          {activeTab === 'Requests' && (
+            <RequestTab
+              projects={projects}
+              selectedProject={selectedProject}
+              setSelectedProject={setSelectedProject}
+              projectMaterials={getProjectMaterialsWithDetails(selectedProject)}
+              usageLogs={getProjectUsageLogs(selectedProject)}
+              onAddProjectMaterial={() => setShowAddProjectMaterial(true)}
+              onLogUsage={() => setShowUsageLog(true)}
+            />
+          )}
+          
         </div>
 
         {/* Add Material Modal */}

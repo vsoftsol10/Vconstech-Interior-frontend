@@ -36,15 +36,13 @@ const EmployeeMaterialForm = ({ material, onChange, categories, isProjectSpecifi
     <div className="grid grid-cols-2 gap-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-        <select
-          value={material.category}
-          onChange={(e) => onChange({ ...material, category: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        >
-          {categories.filter(c => c !== 'All').map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
+        <input
+        type="text"
+        value={material.category}
+        onChange={(e) => onChange({ ...material, category: e.target.value })}
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="e.g., Flooring"
+      />
       </div>
 
       <div>

@@ -48,7 +48,7 @@ const EmployeeNavbar = () => {
             <div className="hidden md:flex items-center space-x-1">
               <Link
                 to="/employee-dashboard"
-                className={`px-3 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm uppercase tracking-wide transition-colors duration-200 ${
+                className={`ml-2 px-2 lg:px-4 py-2 rounded-lg font-semibold text-xs lg:text-sm uppercase tracking-wide transition-colors duration-200 ${
                   location.pathname === '/employee-dashboard'
                     ? 'bg-slate-900 text-white'
                     : 'text-slate-800 hover:bg-slate-900/10'
