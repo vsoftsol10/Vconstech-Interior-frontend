@@ -120,7 +120,26 @@ const RequestTab = () => {
         setLoading(false);
       }
     };
+    const handleAcceptRequest = async (requestId) => {
+        try {
+          const result = await materialRequestAPI.approve(requestId, 'Request approved');
+          console.log('Approve result:', result);
+          fetchMaterialRequests();
+          if (selectedProject) {
+            fetchProjectMaterials(selectedProject);
+          }
+        } catch (err) {
+          console.error('Error accepting request:', err);
+          alert(`Failed to accept request: ${err.response?.data?.error || err.message}`);
+        }
+      };
     
+      const handleRejectClick = (requestId) => {
+        setSelectedRequestId(requestId);
+        setShowRejectModal(true);
+        setRejectReason("");
+      };
+      
       const fetchProjectMaterials = async (projectId) => {
         try {
           setLoading(true);
